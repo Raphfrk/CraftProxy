@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -101,6 +102,11 @@ public class PassthroughServer implements Runnable {
 			}
 
 			if( socket != null ) {
+				try {
+					socket.setSoTimeout(2000);
+				} catch (SocketException e) {
+					System.out.println( "Unable to set timeout");
+				}
 				PassthroughConnection passthrough = new PassthroughConnection( socket , defaultServer, defaultPortnum, password );
 				Thread t = new Thread( passthrough );
 				connections.add(passthrough);

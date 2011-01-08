@@ -7,44 +7,56 @@ import java.io.InputStreamReader;
 public class Main {
 
 	public static void main(String [] args) {
-		
+
 		System.out.println( "Starting Craftproxy version " +  VersionNumbering.version );
-		
+
 		String defaultServer;
 		int listenPort;
 		int defaultPort;
-		String password;
+		String password = "";
 		
+		String usageString = "craftproxy <port to bind to> <default server> <default port> [verbose] [auth]";
+
 		if( args.length < 3 ) {
-			System.out.println( "Usage: craftproxy <port to bind to> <default server> <default port> [<password>] [verbose]");
+			System.out.println( "Usage: " + usageString );
 			System.exit(0);
 			return;
 		} else {
 			try {
-			listenPort = Integer.parseInt(args[0]);
-			defaultServer = args[1];
-			defaultPort = Integer.parseInt(args[2]);
-			if( args.length > 3 ) {
-				if( args[3].equals("verbose")) {
-					Verbose.setVerbose(true);
+				listenPort = Integer.parseInt(args[0]);
+				defaultServer = args[1];
+				defaultPort = Integer.parseInt(args[2]);
+				for( int pos=3;pos<args.length;pos++) {
+
+					     if( args[pos].equals("verbose")) Globals.setVerbose(true);
+					else if( args[pos].equals("auth"))    Globals.setAuth(true);
+					else                                  password = new String(args[pos]);
+
 				}
-				password = args[3];
-			} else {
-				password = "";
-			}
-			if( args.length > 4 && args[4].equals("verbose")) {
-				Verbose.setVerbose(true);
-			}
+
 			} catch (NumberFormatException nfe) {
 				System.out.println( "Unable to parse port numbers");
-				System.out.println( "Usage: craftproxy <port to bind to> <default server> <default port> [<password>]");
+				System.out.println( "Usage: " + usageString );
 				System.exit(0);
 				return;
 			}
 		}
+		
+		if( !Globals.isAuth() ) {
+			System.out.println( "" );
+			System.out.println( "WARNING: You have not enabled player name authentication");
+			System.out.println( "WARNING: This means that player logins are not checked with the minecraft server");
+			System.out.println( "" );
+			System.out.println( "To enable name authentication, add auth to the command line" );
+			System.out.println( "" );
+		} else {
+			System.out.println( "Name authentication enabled");
+		}
+		
+		System.out.println( "Use \"end\" to stop the server");
 
 		PassthroughServer server = new PassthroughServer( listenPort, defaultServer, defaultPort, password );
-		
+
 		Thread t = new Thread( server );
 		t.start();
 
@@ -58,16 +70,16 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		try {
 			in.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		server.kill();
-		
+
 	}
 
 

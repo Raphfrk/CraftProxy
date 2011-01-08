@@ -68,7 +68,7 @@ public class SocketBridge implements Runnable {
 					
 					packetIdStore.add(currentPacket.packetId);
 					
-					if( !currentPacket.valid && !currentPacket.eof ) {
+					if( !currentPacket.valid && !currentPacket.eof && !currentPacket.timeout ) {
 						currentPacket.eof = true;
 						System.out.println( "Most recent packets: " + packetIdStore );
 						

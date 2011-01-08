@@ -52,7 +52,7 @@ public class PassthroughConnection implements Runnable {
 	}
 
 	public void run() {
-		
+
 		DataInputStream inputFromClient = null;
 		DataOutputStream outputToClient = null;
 
@@ -85,9 +85,20 @@ public class PassthroughConnection implements Runnable {
 			informEnd();
 			return;
 		}
-		
-		//System.out.println( "Carrying out input handshake");
-		//Protocol.processLogin(inputFromClient, outputToClient);
+
+		System.out.println( "Carrying out input handshake");
+		if( !Protocol.processLogin(inputFromClient, outputToClient) ) {
+
+			Protocol.kick(outputToClient, "Proxy server refused login attempt");
+			try {
+				inputFromClient.close();
+				outputToClient.close();
+			} catch (IOException e) {
+				System.out.println( "Unable to close connections properly");
+			} 
+			informEnd();
+			return;
+		}
 
 
 		try {
@@ -99,10 +110,10 @@ public class PassthroughConnection implements Runnable {
 			try {
 				System.out.println( "Closing client connection");
 				DataOutputStream outData = new DataOutputStream( socketToClient.getOutputStream() );
-				
+
 				ArrayList<Byte> kick = Protocol.genKickPacket(
 						"Unable to open connection to target server");
-				
+
 				outData.write(Protocol.tobytes(kick));
 				outData.flush();
 				socketToClient.close();
@@ -118,7 +129,7 @@ public class PassthroughConnection implements Runnable {
 
 		DataInputStream inputFromServer = null;
 		DataOutputStream outputToServer = null;
-		
+
 		System.out.println( "Attempting to establish data streams");
 		try {
 			inputFromServer = new DataInputStream( socketToServer.getInputStream() );
@@ -149,18 +160,24 @@ public class PassthroughConnection implements Runnable {
 			informEnd();
 			return;
 		}
-		
+
 		System.out.println( "Streams established");
 		
-		upstreamBridge = new SocketBridge( inputFromClient, outputToServer, new UpstreamMonitor(), false );
-		downstreamBridge = new SocketBridge( inputFromServer, outputToClient, new DownstreamMonitor(), true );
+		UpstreamMonitor upstreamMonitor = new UpstreamMonitor();
+		DownstreamMonitor downstreamMonitor = new DownstreamMonitor();
+		
+		upstreamMonitor.setOtherMonitor(downstreamMonitor);
+		downstreamMonitor.setOtherMonitor(upstreamMonitor);
+
+		upstreamBridge = new SocketBridge( inputFromClient, outputToServer, upstreamMonitor, false );
+		downstreamBridge = new SocketBridge( inputFromServer, outputToClient, downstreamMonitor, true );
 
 		Thread t1 = new Thread( upstreamBridge );
 		Thread t2 = new Thread( downstreamBridge );
 		t1.start();
 		t2.start();
 
-		
+
 		informEnd();
 	}
 

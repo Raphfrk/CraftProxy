@@ -1,9 +1,18 @@
 package com.raphfrk.craftproxy;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.LinkedList;
 
 
-public class UpstreamMonitor implements SocketMonitor {
+public class UpstreamMonitor extends SocketMonitor {
+
+	UpstreamMonitor() {
+		super();
+	}
+	
+	UpstreamMonitor(SocketMonitor other) {
+		super(other);
+	}
 
 	@Override
 	public void process(Packet packet, DataOutputStream out) {

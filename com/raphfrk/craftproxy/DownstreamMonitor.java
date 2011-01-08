@@ -1,14 +1,20 @@
 package com.raphfrk.craftproxy;
 import java.io.DataOutputStream;
-import java.io.IOException;
+import java.util.LinkedList;
 
 
-public class DownstreamMonitor implements SocketMonitor{
+public class DownstreamMonitor extends SocketMonitor{
+	
+	DownstreamMonitor() {
+		super();
+	}
+
+	DownstreamMonitor(SocketMonitor other) {
+		super(other);
+	}
 
 	@Override
 	public void process(Packet packet, DataOutputStream out) {
-
-
 
 		// Use return to cancel sending packet to client
 		switch(packet.packetId) {

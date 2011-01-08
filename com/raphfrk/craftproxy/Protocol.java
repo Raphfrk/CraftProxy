@@ -1,9 +1,15 @@
 package com.raphfrk.craftproxy;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 
 
@@ -252,7 +258,7 @@ public class Protocol {
 
 		item.id = getShort(in);
 
-		
+
 		if( item.id != -1 ) {
 			item.count = getByte(in);
 			item.damage = getByte(in);
@@ -286,21 +292,21 @@ public class Protocol {
 
 
 	}
-	
+
 	public static IntSizedByteArray getIntSizedByteArray( DataInputStream in ) {
 
 		IntSizedByteArray data = new IntSizedByteArray();
 
 		data.size = getInt(in);
-		
+
 		data.data = new byte[data.size];
-		
+
 		int offset=0;
-		
+
 		int read = 0;
-		
+
 		while( offset < data.size && read >= 0) {
-			
+
 			try {
 				read = in.read(data.data, offset, data.size - offset );
 			} catch (IOException e) {
@@ -309,9 +315,9 @@ public class Protocol {
 				return data;
 			}
 			offset += read;
-			
+
 		}
-		
+
 		return data;
 
 
@@ -329,21 +335,21 @@ public class Protocol {
 
 
 	}
-	
+
 	public static IntSizedTripleByteArray getIntSizedTripleByteArray( DataInputStream in ) {
 
 		IntSizedTripleByteArray data = new IntSizedTripleByteArray();
 
 		data.size = getInt(in)*3;
-		
+
 		data.data = new byte[data.size];
-		
+
 		int offset=0;
-		
+
 		int read = 0;
-		
+
 		while( offset < data.size && read >= 0) {
-			
+
 			try {
 				read = in.read(data.data, offset, data.size - offset );
 			} catch (IOException e) {
@@ -352,9 +358,9 @@ public class Protocol {
 				return data;
 			}
 			offset += read;
-			
+
 		}
-		
+
 		return data;
 
 
@@ -391,7 +397,7 @@ public class Protocol {
 
 			current.id = getShort(in);
 
-			if( Verbose.isVerbose() ) {
+			if( Globals.isVerbose() ) {
 				System.out.println( "ID: " + current.id );
 			}
 
@@ -408,13 +414,13 @@ public class Protocol {
 
 
 	}
-	
+
 	public static ArrayList<Byte> genMultiBlockArray( MultiBlockArray data ) {
 
 		ArrayList<Byte> bytes = new ArrayList<Byte>();
 
 		bytes.addAll(genShort((short)(data.data.length)));
-		
+
 		for( short coord : data.coords ) {
 			bytes.addAll( genShort(coord) );
 		}
@@ -431,15 +437,15 @@ public class Protocol {
 	public static MultiBlockArray getMultiBlockArray( DataInputStream in ) {
 
 		MultiBlockArray multiBlockArray = new MultiBlockArray();
-		
+
 		int count = getShort(in);
-		
+
 		multiBlockArray.coords = new short[count];
 		multiBlockArray.data   = new byte[count];
 		multiBlockArray.type   = new byte[count];
 
 		int pos;
-		
+
 		for(pos=0;pos<count;pos++) {
 			multiBlockArray.coords[pos] = getShort(in); 
 		}
@@ -468,7 +474,7 @@ public class Protocol {
 			System.out.print("UTF-8 not supported");
 			return new ArrayList<Byte>();
 		}
-		
+
 		bytes.addAll(genShort( (short)utf8.length));
 
 		for( byte current : utf8 ) {
@@ -522,17 +528,146 @@ public class Protocol {
 
 	// High level functions
 
-	/*	static boolean processLogin( DataInputStream inputFromClient, DataInputStream outputToClient ) {
+	static SecureRandom hashGenerator = new SecureRandom();
 
-		byte[] buffer;
+	static boolean processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient ) {
 
-		buffer = inputFromClient.read(buffer, 0, );
+		Packet handshakeFromClient = new Packet();
+		if( !getPacket(handshakeFromClient, inputFromClient, (byte)0x02)) {
+			return false;
+		}
 
-		LoginRequest clientLogin = 
+		String username = (String)handshakeFromClient.fields[0];
 
+		System.out.println( username + " attempting to connect");
+
+		String hashString;
+
+		if( Globals.isAuth() ) {
+			long hashLong;
+			synchronized( hashGenerator ) {
+				hashLong = hashGenerator.nextLong();
+			}
+
+			hashString = Long.toHexString(hashLong);
+		} else {
+			hashString = "-";
+		}
+
+		Packet handshakeToClient = new Packet( 
+				(byte)0x02, 
+				new Object[] { hashString },
+				true
+		);
+		
+		System.out.println( "Server Handshake:\n" + handshakeToClient + "\n");
+		System.out.flush();
+
+		if( !handshakeToClient.writeBytes(outputToClient) ) {
+			return false;
+		}
+
+		Packet clientLogin = new Packet();
+		if( !getPacket(clientLogin, inputFromClient, (byte)0x01)) {
+			return false;
+		}
+
+		System.out.println( "Client Login:\n" + clientLogin + "\n");
+
+		if( Globals.isAuth() && !authenticated( username , hashString ) ) {
+
+			System.out.println( username + " failed auth");
+			return false;
+		}
+
+		Packet serverLogin = new Packet( (byte)0x01, 
+				new Object[] { 
+				new Integer(1111),
+				new String(""),
+				new String(""),
+				new Long(0),
+				new Byte((byte)0)
+		},
+		true
+		);
+
+		return false;
+
+	}
+	
+	static boolean getPacket( Packet packet, DataInputStream input, byte packetId ) {
+
+		Packet newPacket = new Packet( input , false );
+
+		boolean first = true;
+
+		while( !newPacket.valid || first ) {
+
+			first = false;
+
+			if( newPacket.valid && newPacket.packetId != packetId ) {
+				System.out.println( "Correct packet " + packetId + " not received from client");
+				return false;
+			} else if( newPacket.eof ) {
+				System.out.println( "Socket closed");
+				return false;
+			} else if ( newPacket.timeout ) {
+				System.out.println( "Login process going slowly");
+			}
+
+			if( !newPacket.valid ) {
+				newPacket = new Packet( input , false );
+			}
+
+		}
+		
+		packet.copy(newPacket);
+		
 		return true;
+		
+	}
 
-	}*/
+	static boolean authenticated( String username , String hashString )  {
+
+		try {
+			String authURLString = new String( "http://www.minecraft.net/game/checkserver.jsp?user=" + username + "&serverId=" + hashString);
+			System.out.println( "Authing with " + authURLString);
+			System.out.flush();
+			URL minecraft = new URL(authURLString);
+			URLConnection minecraftConnection = minecraft.openConnection();
+			BufferedReader in = new BufferedReader(new InputStreamReader(minecraftConnection.getInputStream()));
+
+			String reply = in.readLine();
+
+			System.out.println( "Server Response: " + reply );
+
+			if( reply != null && reply.equals("YES")) {
+				in.close();
+				System.out.println( "Auth successful");
+				return true;
+			}
+		} catch (MalformedURLException mue) {
+			System.out.println( "Auth URL error");
+		} catch (IOException ioe) {
+			System.out.println( "Problem connecting to auth server");
+		}
+
+		return false;
+
+
+	}
+
+	static void kick( DataOutputStream outputToClient, String message) {
+
+		Packet kickPacket = new Packet(
+				(byte)0xFF,
+				new Object[]{ new String(message) },
+				true
+		);
+
+		kickPacket.writeBytes(outputToClient);
+
+	}
 
 
 

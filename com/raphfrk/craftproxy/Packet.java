@@ -6,15 +6,16 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
 
 public class Packet {
-	
+
 	HashMap<Byte,Class[]> packetTypes = new HashMap<Byte,Class[]>();
-	
+
 	Packet() {
 		packetTypes.put((byte)0x00, new Class[] {});
 		packetTypes.put((byte)0x01, new Class[] {Integer.class, String.class, String.class, Long.class, Byte.class});
@@ -63,23 +64,71 @@ public class Packet {
 		packetTypes.put((byte)0x82, new Class[] {Integer.class, Short.class, Integer.class, String.class, String.class, String.class, String.class});
 		packetTypes.put((byte)0xFF, new Class[] {String.class});
 	}
-	
-	
+
+
 	public byte packetId;
-	
+
 	public Class[] classes;
 	public Object[] fields;
-	
+
 	boolean server;
-	
+
 	public boolean eof = false;
 	public boolean valid = false;
-	
-	Packet( DataInputStream in, boolean server ) {
+	public boolean timeout = false;
+
+	Packet( byte id , Object[] fields , boolean server ) {
+
 		this();
 		
+		this.packetId = id;
 		this.server = server;
-		
+
+		classes = packetTypes.get(packetId);
+
+		if( classes == null ) {
+			System.out.println( "Unknown packet id (" + packetId + ") in Packet constructor");
+			valid = false;
+			eof = true;
+			return;
+		}
+
+		if( fields == null ) {
+			this.fields = new Object[1];
+		} else {
+			this.fields = fields;
+		}
+
+		if( fields.length != classes.length ) {
+			System.out.println( "Fields and length must be the same size");
+			valid = false;
+			eof = true;
+			return;
+		}
+
+		for( int pos=0;pos<fields.length;pos++) {
+
+			if( !classes[pos].equals(fields[pos].getClass()) ) {
+				System.out.println( "Field (" + fields[pos].getClass().getName() + ") and Class (" + classes[pos].getName() + ") " + pos + " are not the same type");
+				valid = false;
+				eof = true;
+				return;
+			}
+
+		}
+
+		valid = true;
+		eof = false;
+		return;
+
+
+	}
+
+	Packet( DataInputStream in, boolean server ) {
+		this();
+
+		this.server = server;
+
 		try {
 			packetId = in.readByte();
 		} catch (EOFException e) {
@@ -87,32 +136,38 @@ public class Packet {
 			eof = true;
 			System.out.println( ((server)?("S->C"):"C->S") + " EOF reached");
 			return;
+		} catch ( SocketTimeoutException toe ) {
+			System.out.println( ((server)?("S->C"):"C->S") + " read time-out reached");
+			valid = false;
+			eof = false;
+			timeout = true;
+			return;
 		} catch (IOException e) {
 			valid = false;
 			eof = true;
 			System.out.println( ((server)?("S->C"):"C->S") + " Unable to read packet ID");
 			return;
 		}
-		
+
 		classes = packetTypes.get(packetId);
-		
+
 		if( classes == null ) {
 			System.out.println( ((server)?("S->C"):"C->S") + " Unknown packet Id: " + Integer.toHexString(packetId&0xFF) );
 			valid = false;
 			eof = false;
 			return;
 		} else {
-			if( Verbose.isVerbose() ) {
+			if( Globals.isVerbose() ) {
 				System.out.println( ((server)?("S->C"):"C->S") + " packet: " + Integer.toHexString(packetId&0xFF) );
 			}
 		}
-		
+
 		fields = new Object[classes.length];
-		
+
 		int pos = 0;
-		
+
 		for( Class current: classes ) {
-			
+
 			if( current.equals(String.class)) {
 				fields[pos++] = Protocol.getString(in);
 			} else if( current.equals(IntSizedByteArray.class)) {
@@ -147,22 +202,22 @@ public class Packet {
 			}
 
 		}
-		
+
 		valid = true;
 		eof = false;
-		
+
 	}
-	
-	boolean writeBytes(DataOutputStream out) {
-		
+
+	public boolean writeBytes(DataOutputStream out) {
+
 		ArrayList<Byte> bytes = new ArrayList<Byte>();
-		
+
 		try {
 			out.writeByte(packetId);
-			
+
 			int pos = 0;
 			for( Class current: classes ) {
-				
+
 				if( current.equals(String.class)) {
 					bytes.addAll(Protocol.genString((String)fields[pos++]));
 				} else if( current.equals(MultiBlockArray.class)) {
@@ -195,59 +250,90 @@ public class Packet {
 				}
 
 			}
-			
+
 			out.write(Protocol.tobytes(bytes));
-			
+
 			out.flush();
-			
+
 		} catch (IOException e) {
 			System.out.println( "Unable to write bytes in writeBytes (Packet)");
 			return false;
 		}
-		
-		if( Verbose.isVerbose() ) {
+
+		if( Globals.isVerbose() ) {
 			System.out.println( ((server)?("S->C"):"C->S") + " packet processed: " + Integer.toHexString(packetId&0xFF) );
 		}
 
-				
+
 		return true;
+
+
+
+	}
+	
+	public void copy(Packet other) {
 		
+		this.eof = other.eof;
+		this.classes = other.classes;
+		this.fields = other.fields;
+		this.packetId = other.packetId;
+		this.packetTypes = other.packetTypes;
+		this.server = other.server;
+		this.timeout = other.timeout;
+		this.valid = other.valid;
 		
 		
 	}
-	
-	boolean test() {
-		
+
+	public boolean test() {
+
 		ByteArrayOutputStream arrayOutStream = new ByteArrayOutputStream();
 
 		DataOutputStream out = new DataOutputStream( arrayOutStream );
-		
+
 		writeBytes(out);
-		
+
 		try {
 			out.flush();
 		} catch (IOException e) {
 			return false;
 		}
-		
+
 		ByteArrayInputStream arrayInStream = new ByteArrayInputStream(arrayOutStream.toByteArray());
 
 		DataInputStream in = new DataInputStream( arrayInStream );
-		
+
 		Packet newPacket = new Packet( in , server );
-		
+
 		boolean match = this.equals(newPacket);
-		
+
 		if( !match ) {
 			System.out.println( "Error was on: " + ((server)?("S->C"):"C->S"));
 		}
-		
+
 		return match;
-		
-		
+
+
 	}
-	
-	
+
+	@Override 
+	public String toString() {
+
+		 if( fields == null ) {
+			 return "";
+		 }
+		 
+		 StringBuilder sb = new StringBuilder("Packet ID: " + this.packetId );
+		 
+		 for( Object field : fields ) {
+			 
+			 sb.append("\n" + field.getClass().getName() + ") " + field.toString() );
+			 
+		 }
+		 
+		 return sb.toString();
+			 
+	 }
 
 	@Override
 	public boolean equals(Object obj) {
@@ -259,60 +345,61 @@ public class Packet {
 			System.out.println( "Other packet is not actually a packet");
 			return false;
 		} else {
-			
+
 			Packet other = (Packet)obj;
-			
+
 			if( !other.valid ) {
 				System.out.println( "Other packet not valid");
 				return false;
 			}
-			
+
 			if( this.packetId != other.packetId) {
 				System.out.println( "Different Packet IDs");
 				return false;
 			}
-			
+
 			if( this.server != other.server ) {
 				System.out.println( "Connection direction doesn't match");
 				return false;
 			}
-			
+
 			if( this.classes.length != other.classes.length ) {
 				System.out.println( "Mismatch in number of classes");
 				return false;
 			}
-			
+
 			if( this.fields.length != other.fields.length ) {
 				System.out.println( "Mismatch in number of fields");
 				return false;
 			}
-			
+
 			if( !Arrays.equals(this.classes, other.classes) ) {
 				System.out.println( "Classes mismatch types of classes");
 				return false;
 			}
-			
-			
+
+
 			if( !Arrays.equals(this.fields, other.fields) ) {
 				System.out.println( "Mismatch in field array");
-				
+
 				System.out.println( "This packet:");
 				for( Object current: this.fields ) {
 					System.out.println(current);
 				}
-				
+
 				System.out.println( "Other packet:");
 				for( Object current: other.fields ) {
 					System.out.println(current);
 				}
-				
+
 				return false;
 			}
-			
+
 			return true;
-			
+
 		}
+		
 
 	}
-	
+
 }
