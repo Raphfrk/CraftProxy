@@ -1,0 +1,9 @@
+To start use:
+
+java -jar CraftProxy.jar <port to bind to> <default server> <default port> [<password>] [verbose]
+
+If your server is on the same server as the proxy and uses port 25565, you could use
+
+java -jar CraftProxy.jar 20000 localhost 25565 somepassword
+
+Players would connect using yourhostname.com:20000
