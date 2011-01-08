@@ -391,7 +391,9 @@ public class Protocol {
 
 			current.id = getShort(in);
 
-			System.out.println( "ID: " + current.id );
+			if( Verbose.isVerbose() ) {
+				System.out.println( "ID: " + current.id );
+			}
 
 			if( current.id != -1 ) {
 				current.count = getByte(in);
@@ -459,8 +461,6 @@ public class Protocol {
 
 		ArrayList<Byte> bytes = new ArrayList<Byte>();
 
-		bytes.addAll(genShort( (short)in.length()));
-
 		byte[] utf8;
 		try {
 			utf8 = in.getBytes("UTF-8");
@@ -468,6 +468,8 @@ public class Protocol {
 			System.out.print("UTF-8 not supported");
 			return new ArrayList<Byte>();
 		}
+		
+		bytes.addAll(genShort( (short)utf8.length));
 
 		for( byte current : utf8 ) {
 			bytes.add(current);

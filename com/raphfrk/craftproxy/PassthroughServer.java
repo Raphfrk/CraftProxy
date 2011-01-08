@@ -77,6 +77,8 @@ public class PassthroughServer implements Runnable {
 			return;
 		} 
 
+		System.out.println( "Server listening on port " + listenPort );
+		
 		boolean localRun;
 		synchronized( run ) {
 			localRun = run.get();

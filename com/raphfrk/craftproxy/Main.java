@@ -8,13 +8,15 @@ public class Main {
 
 	public static void main(String [] args) {
 		
+		System.out.println( "Starting Craftproxy version " +  VersionNumbering.version );
+		
 		String defaultServer;
 		int listenPort;
 		int defaultPort;
 		String password;
 		
 		if( args.length < 3 ) {
-			System.out.println( "Usage: craftproxy <port to bind to> <default server> <default port> [<password>]");
+			System.out.println( "Usage: craftproxy <port to bind to> <default server> <default port> [<password>] [verbose]");
 			System.exit(0);
 			return;
 		} else {
@@ -23,9 +25,15 @@ public class Main {
 			defaultServer = args[1];
 			defaultPort = Integer.parseInt(args[2]);
 			if( args.length > 3 ) {
+				if( args[3].equals("verbose")) {
+					Verbose.setVerbose(true);
+				}
 				password = args[3];
 			} else {
 				password = "";
+			}
+			if( args.length > 4 && args[4].equals("verbose")) {
+				Verbose.setVerbose(true);
 			}
 			} catch (NumberFormatException nfe) {
 				System.out.println( "Unable to parse port numbers");

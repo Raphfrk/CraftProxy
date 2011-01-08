@@ -102,7 +102,9 @@ public class Packet {
 			eof = false;
 			return;
 		} else {
-			System.out.println( ((server)?("S->C"):"C->S") + " packet: " + Integer.toHexString(packetId&0xFF) );
+			if( Verbose.isVerbose() ) {
+				System.out.println( ((server)?("S->C"):"C->S") + " packet: " + Integer.toHexString(packetId&0xFF) );
+			}
 		}
 		
 		fields = new Object[classes.length];
@@ -203,7 +205,9 @@ public class Packet {
 			return false;
 		}
 		
-		System.out.println( ((server)?("S->C"):"C->S") + " packet processed: " + Integer.toHexString(packetId&0xFF) );
+		if( Verbose.isVerbose() ) {
+			System.out.println( ((server)?("S->C"):"C->S") + " packet processed: " + Integer.toHexString(packetId&0xFF) );
+		}
 
 				
 		return true;
