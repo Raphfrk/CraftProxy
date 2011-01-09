@@ -12,6 +12,16 @@ public class Globals {
 		verbose = newVerbose;
 	}
 	
+	static private boolean info = false;
+
+	synchronized static boolean isInfo() {
+		return info;
+	}
+	
+	synchronized static void setInfo( boolean newInfo ) {
+		info = newInfo;
+	}
+	
 	static private boolean authenticate = false;
 	
 	synchronized static boolean isAuth() {

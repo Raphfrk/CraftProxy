@@ -1,5 +1,6 @@
 package com.raphfrk.craftproxy;
 import java.io.DataOutputStream;
+import java.io.IOException;
 
 
 public class UpstreamMonitor extends SocketMonitor {
@@ -17,22 +18,35 @@ public class UpstreamMonitor extends SocketMonitor {
 	}
 
 	@Override
-	public void process(Packet packet, DataOutputStream out) {
+	public boolean process(Packet packet, DataOutputStream out) {
+		
+		CommandElement command;
+		
+		while( (command = getCommand()) != null ) {
+			
+			System.out.println( "Command received: " + command.command );
+			
+			if( command.command.equals("REDIRECTBREAK")) {
+				return false;
+			} else if( command.command.equals("EOFBREAK")) {
+				return false;
+			} else if( command.command.equals("INVALIDBREAK")) {
+				return false;
+			}
+			
+		}
 		
 		packet = super.convertEntityIds(packet, false);
 		
 		// Use return to cancel sending packet to client
-		switch(packet.packetId) {
-		
-		case ((byte)0xFF):    System.out.println( "Kicked with: " + ((String)packet.fields[0]) ); 
-
-		}
 		
 		if( !packet.test() ) {
 			System.exit(0);
 		}
 		
 		packet.writeBytes(out);
+		
+		return true;
 
 	}
 	

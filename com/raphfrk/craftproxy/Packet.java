@@ -332,7 +332,7 @@ public class Packet {
 			 return "";
 		 }
 		 
-		 StringBuilder sb = new StringBuilder("Packet ID: " + this.packetId );
+		 StringBuilder sb = new StringBuilder("Packet ID: 0x" + Integer.toHexString(this.packetId) );
 		 
 		 for( Object field : fields ) {
 			 

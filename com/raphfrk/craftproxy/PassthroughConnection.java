@@ -85,7 +85,7 @@ public class PassthroughConnection implements Runnable {
 			informEnd();
 			return;
 		}
-		
+
 		PlayerRecord playerRecord = new PlayerRecord();
 
 		System.out.println( "Carrying out input handshake");
@@ -101,101 +101,165 @@ public class PassthroughConnection implements Runnable {
 			informEnd();
 			return;
 		}
+		
+		boolean firstLogin = true;
 
 
-		try {
-			System.out.println("Attempting to connect to: " + hostname + ":" + port );
-			socketToServer = new Socket();
-			socketToServer.connect(new InetSocketAddress(hostname, port), 60000);
-		} catch (ConnectException ce) {
-			System.out.println( "Unable to connect to server at " + hostname + ":" + port);
+		while( port != -1 ) {
+
 			try {
-				System.out.println( "Closing client connection");
-				DataOutputStream outData = new DataOutputStream( socketToClient.getOutputStream() );
-
-				ArrayList<Byte> kick = Protocol.genKickPacket(
-						"Unable to open connection to target server");
-
-				outData.write(Protocol.tobytes(kick));
-				outData.flush();
-				socketToClient.close();
-			} catch (IOException e) {
-				System.out.println( "Unable to close client connection");
-			}
-			informEnd();
-			return;
-		} catch (IOException e) {
-			informEnd();
-			return;
-		}
-
-		DataInputStream inputFromServer = null;
-		DataOutputStream outputToServer = null;
-
-		System.out.println( "Attempting to establish data streams");
-		try {
-			inputFromServer = new DataInputStream( socketToServer.getInputStream() );
-		} catch (IOException e) {
-			System.out.println("Unable to open data stream to server");
-			if( inputFromServer != null ) {
+				System.out.println("Attempting to connect to: " + hostname + ":" + port );
+				socketToServer = new Socket();
+				socketToServer.connect(new InetSocketAddress(hostname, port), 60000);
+			} catch (ConnectException ce) {
+				System.out.println( "Unable to connect to server at " + hostname + ":" + port);
 				try {
-					inputFromServer.close();
-				} catch (IOException e1) {
-					System.out.println("Unable to close data stream to server");
+					System.out.println( "Closing client connection");
+					DataOutputStream outData = new DataOutputStream( socketToClient.getOutputStream() );
+
+					ArrayList<Byte> kick = Protocol.genKickPacket(
+					"Unable to open connection to target server");
+
+					outData.write(Protocol.tobytes(kick));
+					outData.flush();
+					socketToClient.close();
+				} catch (IOException e) {
+					System.out.println( "Unable to close client connection");
+				}
+				informEnd();
+				return;
+			} catch (IOException e) {
+				informEnd();
+				return;
+			}
+
+			DataInputStream inputFromServer = null;
+			DataOutputStream outputToServer = null;
+
+			System.out.println( "Attempting to establish data streams");
+			try {
+				inputFromServer = new DataInputStream( socketToServer.getInputStream() );
+			} catch (IOException e) {
+				System.out.println("Unable to open data stream to server");
+				if( inputFromServer != null ) {
+					try {
+						inputFromServer.close();
+					} catch (IOException e1) {
+						System.out.println("Unable to close data stream to server");
+					}
+				}
+				informEnd();
+				return;
+			}
+
+			try {
+				outputToServer = new DataOutputStream( socketToServer.getOutputStream() );
+			} catch (IOException e) {
+				System.out.println("Unable to open data stream from server");
+				if( outputToServer != null ) {
+					try {
+						outputToServer.close();
+					} catch (IOException e1) {
+						System.out.println("Unable to close data stream from server");
+					}
+				}
+				informEnd();
+				return;
+			}
+
+			System.out.println( "Connection to server established");
+
+			System.out.println( "Logging in on behalf of " + playerRecord.username );
+			System.out.flush();
+			if( !Protocol.serverLogin(inputFromServer, outputToServer, playerRecord) ) {
+
+				Protocol.kick(outputToClient, "Unable to connect to backend server");
+				try {
+					inputFromClient.close();
+					outputToClient.close();
+				} catch (IOException e) {
+					System.out.println( "Unable to close connections properly");
+				} 
+				informEnd();
+				return;
+			}
+			
+			playerRecord.loginPacket.fields[0] = Globals.getDefaultPlayerId();
+			
+			if( Globals.isInfo() ) {
+				System.out.println( "Updated login packet\n" + playerRecord.loginPacket );
+			}
+			
+			if( firstLogin ) {
+				firstLogin = false; 
+				if( !playerRecord.loginPacket.writeBytes(outputToClient) ) {
+					informEnd();
+					return;
 				}
 			}
-			informEnd();
-			return;
-		}
 
-		try {
-			outputToServer = new DataOutputStream( socketToServer.getOutputStream() );
-		} catch (IOException e) {
-			System.out.println("Unable to open data stream from server");
-			if( outputToServer != null ) {
-				try {
-					outputToServer.close();
-				} catch (IOException e1) {
-					System.out.println("Unable to close data stream from server");
+			SynchronizedEntityMap synchronizedEntityMap = new SynchronizedEntityMap(playerRecord.serverEntityID);
+			
+			UpstreamMonitor upstreamMonitor = new UpstreamMonitor(synchronizedEntityMap);
+			DownstreamMonitor downstreamMonitor = new DownstreamMonitor(synchronizedEntityMap);
+
+			upstreamMonitor.setOtherMonitor(downstreamMonitor);
+			downstreamMonitor.setOtherMonitor(upstreamMonitor);
+
+			upstreamBridge = new SocketBridge( inputFromClient, outputToServer, upstreamMonitor, false );
+			downstreamBridge = new SocketBridge( inputFromServer, outputToClient, downstreamMonitor, true );
+
+			Thread t1 = new Thread( upstreamBridge );
+			Thread t2 = new Thread( downstreamBridge );
+			t1.start();
+			t2.start();
+
+			synchronized(upstreamBridge.running) {
+				while( upstreamBridge.running.get() ) {
+					try {
+						upstreamBridge.running.wait();
+					} catch (InterruptedException e) {}
 				}
 			}
-			informEnd();
-			return;
-		}
 
-		System.out.println( "Connection to server established");
-		
-		System.out.println( "Logging in on behalf of " + playerRecord.username );
-		System.out.flush();
-		if( !Protocol.serverLogin(inputFromServer, outputToServer, playerRecord) ) {
+			synchronized(downstreamBridge.running) {
+				while( downstreamBridge.running.get() ) {
+					try {
+						downstreamBridge.running.wait();
+					} catch (InterruptedException e) {}
+				}
+			}
 
-			Protocol.kick(outputToClient, "Unable to connect to backend server");
+			System.out.println( "Closing connection to server" );
+
 			try {
-				inputFromClient.close();
-				outputToClient.close();
+				outputToServer.close();
+				inputFromServer.close();
 			} catch (IOException e) {
-				System.out.println( "Unable to close connections properly");
-			} 
-			informEnd();
-			return;
+				System.out.println( "Unable to close link");
+			}
+
+			port = ((DownstreamMonitor)downstreamBridge.monitor).portNum;
+
+			if( port == -1 ) {
+
+				System.out.println( "Closing connection to client" );
+
+				try {
+					outputToClient.close();
+					inputFromClient.close();
+				} catch (IOException e) {
+					System.out.println( "Unable to close link");
+				}
+
+				hostname = "";
+				port = -1;
+
+			} else {
+				String hostname = ((DownstreamMonitor)downstreamBridge.monitor).hostName;
+				System.out.println( "Redirect to " + hostname + ":" + port );
+			}
 		}
-		
-		SynchronizedEntityMap synchronizedEntityMap = new SynchronizedEntityMap(playerRecord.serverEntityID);
-		
-		UpstreamMonitor upstreamMonitor = new UpstreamMonitor(synchronizedEntityMap);
-		DownstreamMonitor downstreamMonitor = new DownstreamMonitor(synchronizedEntityMap);
-		
-		upstreamMonitor.setOtherMonitor(downstreamMonitor);
-		downstreamMonitor.setOtherMonitor(upstreamMonitor);
-
-		upstreamBridge = new SocketBridge( inputFromClient, outputToServer, upstreamMonitor, false );
-		downstreamBridge = new SocketBridge( inputFromServer, outputToClient, downstreamMonitor, true );
-
-		Thread t1 = new Thread( upstreamBridge );
-		Thread t2 = new Thread( downstreamBridge );
-		t1.start();
-		t2.start();
-
 
 		informEnd();
 	}

@@ -29,20 +29,21 @@ public class SocketMonitor {
 	public void addCommand( CommandElement command ) {
 
 		synchronized( commands ) {
+			System.out.println( "adding command" );
 			commands.addLast(new CommandElement(command));
 		}
 
 	}
 
 	CommandElement getCommand() {
-
+		
 		CommandElement command;
 
 		synchronized( commands ) {
 			if( commands.isEmpty() ) {
-				command = null;
+				return null;
 			} else {
-				command = new CommandElement(commands.getFirst());
+				command = new CommandElement(commands.removeFirst());
 			}
 		}
 
@@ -51,13 +52,20 @@ public class SocketMonitor {
 	}
 
 
-	void process( Packet packet , DataOutputStream out ) {
+	boolean process( Packet packet , DataOutputStream out ) {
+		return true;
 	}
 
 	class CommandElement {
 
 		String command;
 		Object target;
+		
+		CommandElement( String command, Object target ) {
+			this.command = command;
+			this.target = target;
+		}
+
 
 		CommandElement( CommandElement command ) {
 

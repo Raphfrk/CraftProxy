@@ -536,15 +536,17 @@ public class Protocol {
 		if( !getPacket(handshakeFromClient, inputFromClient, (byte)0x02)) {
 			return false;
 		}
-		
-		System.out.println( "Packet received:" + handshakeFromClient);
+
+		if( Globals.isInfo() ) {
+			System.out.println( "Packet received:" + handshakeFromClient);
+		}
 
 		String username = (String)handshakeFromClient.fields[0];
 
 		System.out.println( username + " attempting to connect");
 
 		playerRecord.username = new String( username );
-		
+
 		String hashString;
 
 		if( Globals.isAuth() ) {
@@ -563,9 +565,11 @@ public class Protocol {
 				new Object[] { hashString },
 				true
 		);
-		
-		System.out.println( "Server Handshake:\n" + handshakeToClient + "\n");
-		System.out.flush();
+
+		if( Globals.isInfo() ) {
+			System.out.println( "Server Handshake:\n" + handshakeToClient + "\n");
+			System.out.flush();
+		}
 
 		if( !handshakeToClient.writeBytes(outputToClient) ) {
 			return false;
@@ -576,15 +580,21 @@ public class Protocol {
 			return false;
 		}
 
-		System.out.println( "Client Login:\n" + clientLogin + "\n");
+		if( Globals.isInfo() ) {
+			System.out.println( "Client Login:\n" + clientLogin + "\n");
+		}
 
 		if( Globals.isAuth() && !authenticated( username , hashString ) ) {
 
 			System.out.println( username + " failed auth");
 			return false;
+		} else if( !Globals.isAuth() ) {
+			System.out.println( "Skipping auth" );
+		} else {
+			System.out.println( username + " passed auth" );
 		}
-		
-		playerRecord.clientEntityID = Globals.getDefaultPlayerId();
+
+		/*playerRecord.clientEntityID = Globals.getDefaultPlayerId();
 
 		Packet serverLogin = new Packet( (byte)0x01, 
 				new Object[] { 
@@ -597,47 +607,51 @@ public class Protocol {
 		},
 		true
 		);
-		
+
 		if( !serverLogin.writeBytes(outputToClient) ) {
 			return false;
-		}
+		}*/
 
 		return true;
 
 	}
-	
+
 	static boolean serverLogin( DataInputStream inputFromServer, DataOutputStream outputToServer, PlayerRecord playerRecord ) {
-		
+
 		Packet handshakeToServer = new Packet( 
 				(byte)0x02, 
 				new Object[] { playerRecord.username },
 				true
 		);
-		
-		System.out.println( "Sending handshake to server:\n" + handshakeToServer + "\n");
-		System.out.flush();
+
+		if( Globals.isInfo() ) {
+			System.out.println( "Sending handshake to server:\n" + handshakeToServer + "\n");
+			System.out.flush();
+		}
 
 		if( !handshakeToServer.writeBytes(outputToServer) ) {
 			return false;
 		}
-		
+
 		Packet handshakeFromServer = new Packet();
-		
+
 		if( !getPacket(handshakeFromServer, inputFromServer, (byte)0x02) ) {
 			System.out.println( "returning false");
 			return false;
 		}
-		
-		System.out.println( "Received handshake from server:\n" + handshakeFromServer + "\n");
-		System.out.flush();
-				
+
+		if( Globals.isInfo() ) {
+			System.out.println( "Received handshake from server:\n" + handshakeFromServer + "\n");
+			System.out.flush();
+		}
+
 		String hashString = (String)handshakeFromServer.fields[0];
-		
+
 		if( !hashString.equals("-") ) {
 			System.out.println( "Authentication is enabled on the back-end server, unable to connect");
 			return false;
 		}
-		
+
 		Packet proxyLogin = new Packet( (byte)0x01, 
 				new Object[] { 
 				new Integer(Globals.getClientVersion()),
@@ -648,36 +662,44 @@ public class Protocol {
 		},
 		true
 		);
-		
-		System.out.println( "Sending login to server:\n" + proxyLogin+ "\n");
-		System.out.flush();
-				
+
+		if( Globals.isInfo() ) {
+			System.out.println( "Sending login to server:\n" + proxyLogin+ "\n");
+			System.out.flush();
+		}
+
 		if( !proxyLogin.writeBytes(outputToServer)) {
 			return false;
 		}
-				
+
 		Packet serverLogin = new Packet();
 		if( !getPacket( serverLogin, inputFromServer, (byte)0x01)) {
 			return false;
 		}
-		
-		System.out.println( "Received login from server:\n" + serverLogin + "\n");
-		System.out.flush();
+
+		if( Globals.isInfo() ) {
+			System.out.println( "Received login from server:\n" + serverLogin + "\n");
+			System.out.flush();
+		}
 
 		playerRecord.serverEntityID = (Integer)serverLogin.fields[0];
-		
+		playerRecord.loginPacket = serverLogin;
+
+
 		return true;
 
 	}
-	
+
 	static boolean getPacket( Packet packet, DataInputStream input, byte packetId ) {
 
 		Packet newPacket = new Packet( input , false );
 
 		boolean first = true;
+		
+		long startTime = System.currentTimeMillis();
 
 		while( !newPacket.valid || first ) {
-			
+
 			first = false;			
 
 			if( newPacket.valid && newPacket.packetId != packetId ) {
@@ -689,7 +711,11 @@ public class Protocol {
 				System.out.println( "Socket closed");
 				return false;
 			} else if ( newPacket.timeout ) {
-				System.out.println( "Login process going slowly");
+				//System.out.println( "Login process going slowly");
+				if( System.currentTimeMillis() > startTime + 20000 ) {
+					System.out.println( "Login process timed out, minecraft.net is probably overloaded");
+					return false;
+				}
 			}
 
 			if( !newPacket.valid ) {
@@ -697,11 +723,11 @@ public class Protocol {
 			}
 
 		}
-		
+
 		packet.copy(newPacket);
-				
+
 		return true;
-		
+
 	}
 
 	static boolean authenticated( String username , String hashString )  {
@@ -716,7 +742,9 @@ public class Protocol {
 
 			String reply = in.readLine();
 
-			System.out.println( "Server Response: " + reply );
+			if( Globals.isInfo() ) {
+				System.out.println( "Server Response: " + reply );
+			}
 
 			if( reply != null && reply.equals("YES")) {
 				in.close();

@@ -13,6 +13,10 @@ public class SynchronizedEntityMap {
 	int counter = 10000;
 	Object counterSync = new Object();
 
+	SynchronizedEntityMap() {
+		reset();
+	}
+	
 	SynchronizedEntityMap(int playerServerId) {
 		reset(playerServerId);
 	}
@@ -23,13 +27,13 @@ public class SynchronizedEntityMap {
 			//if( !clientToServer.containsKey(serverId)) {
 			//	addMap(serverId, serverId);
 			// else {
-				synchronized( counterSync ) {
+			synchronized( counterSync ) {
+				counter+=increment;
+				while( clientToServer.contains(counter) ) {
 					counter+=increment;
-					while( clientToServer.contains(counter) ) {
-						counter+=increment;
-					}
-					addMap(serverId, counter);
-			//	}
+				}
+				addMap(serverId, counter);
+				//	}
 			}
 		}
 		return serverToClient.get(serverId);
@@ -41,23 +45,30 @@ public class SynchronizedEntityMap {
 			//if( !serverToClient.containsKey(clientId)) {
 			//	addMap(clientId, clientId);
 			//} else {
-				synchronized( counterSync ) {
+			synchronized( counterSync ) {
+				counter+=increment;
+				while( serverToClient.contains(counter) ) {
 					counter+=increment;
-					while( serverToClient.contains(counter) ) {
-						counter+=increment;
-					}
-					addMap(counter, clientId);
 				}
+				addMap(counter, clientId);
+			}
 			//}
 		}
-		return clientToServer.get(clientId);	}
+		return clientToServer.get(clientId);	
+	}
 
-	synchronized public void reset(int playerId) {
+	synchronized public void reset() {
 
 		clientToServer = new Hashtable<Integer,Integer>();
 		serverToClient = new Hashtable<Integer,Integer>();
 
 		addMap(-1, -1);
+
+	}
+
+	synchronized public void reset(int playerId) {
+
+		reset();
 		addMap(playerId,Globals.getDefaultPlayerId());
 
 	}

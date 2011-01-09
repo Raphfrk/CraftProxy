@@ -40,55 +40,42 @@ public class SocketBridge implements Runnable {
 		this.server = server;
 
 	}
-	
+
 	PacketIdStore packetIdStore = new PacketIdStore();
 	
+	boolean monitorExit = true;
+
 	public void run() {
 
 		boolean localRun = true;
 
 		Packet currentPacket = new Packet(in, server);
+		
+		monitorExit = monitor.process(currentPacket, out);
 
-		try {
+		while( localRun && !currentPacket.eof && monitorExit) {
 
-			while( localRun && !currentPacket.eof ) {
-
-				synchronized( run ) {
-					localRun = run.get();
-				}
-
-				if( localRun ) {
-
-					if( currentPacket.valid ) {
-						monitor.process(currentPacket, out);
-					}
-
-					currentPacket = new Packet(in, server);
-					
-					packetIdStore.add(currentPacket.packetId);
-					
-					if( !currentPacket.valid && !currentPacket.eof && !currentPacket.timeout ) {
-						currentPacket.eof = true;
-						System.out.println( "Most recent packets: " + packetIdStore );
-						
-					}
-
-				}
+			synchronized( run ) {
+				localRun = run.get();
 			}
-		} finally {
-			if( out != null ) {
-				try {
-					out.close();
-				} catch (IOException e) {
+
+			if( localRun && monitorExit ) {
+
+				currentPacket = new Packet(in, server);
+				
+				monitorExit = monitor.process(currentPacket, out);
+
+				packetIdStore.add(currentPacket.packetId);
+
+				if( !currentPacket.valid && !currentPacket.eof && !currentPacket.timeout ) {
+					currentPacket.eof = true;
+					System.out.println( "Most recent packets: " + packetIdStore );
+
 				}
-			}
-			if( in != null ) {
-				try {
-					in.close();
-				} catch (IOException e) {
-				}
+
 			}
 		}
+
 
 		synchronized(running) {
 			running.set(false);
