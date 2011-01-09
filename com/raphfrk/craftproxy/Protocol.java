@@ -530,17 +530,21 @@ public class Protocol {
 
 	static SecureRandom hashGenerator = new SecureRandom();
 
-	static boolean processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient ) {
+	static boolean processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient, PlayerRecord playerRecord ) {
 
 		Packet handshakeFromClient = new Packet();
 		if( !getPacket(handshakeFromClient, inputFromClient, (byte)0x02)) {
 			return false;
 		}
+		
+		System.out.println( "Packet received:" + handshakeFromClient);
 
 		String username = (String)handshakeFromClient.fields[0];
 
 		System.out.println( username + " attempting to connect");
 
+		playerRecord.username = new String( username );
+		
 		String hashString;
 
 		if( Globals.isAuth() ) {
@@ -579,19 +583,90 @@ public class Protocol {
 			System.out.println( username + " failed auth");
 			return false;
 		}
+		
+		playerRecord.clientEntityID = Globals.getDefaultPlayerId();
 
 		Packet serverLogin = new Packet( (byte)0x01, 
 				new Object[] { 
-				new Integer(1111),
+				new Integer(playerRecord.clientEntityID),
 				new String(""),
 				new String(""),
+				//new Long(9069285780089680887L),
+				new Long(7069285780089680987L),
+				new Byte((byte)0)
+		},
+		true
+		);
+		
+		if( !serverLogin.writeBytes(outputToClient) ) {
+			return false;
+		}
+
+		return true;
+
+	}
+	
+	static boolean serverLogin( DataInputStream inputFromServer, DataOutputStream outputToServer, PlayerRecord playerRecord ) {
+		
+		Packet handshakeToServer = new Packet( 
+				(byte)0x02, 
+				new Object[] { playerRecord.username },
+				true
+		);
+		
+		System.out.println( "Sending handshake to server:\n" + handshakeToServer + "\n");
+		System.out.flush();
+
+		if( !handshakeToServer.writeBytes(outputToServer) ) {
+			return false;
+		}
+		
+		Packet handshakeFromServer = new Packet();
+		
+		if( !getPacket(handshakeFromServer, inputFromServer, (byte)0x02) ) {
+			System.out.println( "returning false");
+			return false;
+		}
+		
+		System.out.println( "Received handshake from server:\n" + handshakeFromServer + "\n");
+		System.out.flush();
+				
+		String hashString = (String)handshakeFromServer.fields[0];
+		
+		if( !hashString.equals("-") ) {
+			System.out.println( "Authentication is enabled on the back-end server, unable to connect");
+			return false;
+		}
+		
+		Packet proxyLogin = new Packet( (byte)0x01, 
+				new Object[] { 
+				new Integer(Globals.getClientVersion()),
+				new String(playerRecord.username),
+				new String("Password"),
 				new Long(0),
 				new Byte((byte)0)
 		},
 		true
 		);
+		
+		System.out.println( "Sending login to server:\n" + proxyLogin+ "\n");
+		System.out.flush();
+				
+		if( !proxyLogin.writeBytes(outputToServer)) {
+			return false;
+		}
+				
+		Packet serverLogin = new Packet();
+		if( !getPacket( serverLogin, inputFromServer, (byte)0x01)) {
+			return false;
+		}
+		
+		System.out.println( "Received login from server:\n" + serverLogin + "\n");
+		System.out.flush();
 
-		return false;
+		playerRecord.serverEntityID = (Integer)serverLogin.fields[0];
+		
+		return true;
 
 	}
 	
@@ -602,11 +677,13 @@ public class Protocol {
 		boolean first = true;
 
 		while( !newPacket.valid || first ) {
-
-			first = false;
+			
+			first = false;			
 
 			if( newPacket.valid && newPacket.packetId != packetId ) {
-				System.out.println( "Correct packet " + packetId + " not received from client");
+				System.out.println( "Correct packet " + packetId + " not received");
+				System.out.println("Packet received: " + newPacket.packetId );
+				System.out.println(newPacket);
 				return false;
 			} else if( newPacket.eof ) {
 				System.out.println( "Socket closed");
@@ -622,7 +699,7 @@ public class Protocol {
 		}
 		
 		packet.copy(newPacket);
-		
+				
 		return true;
 		
 	}

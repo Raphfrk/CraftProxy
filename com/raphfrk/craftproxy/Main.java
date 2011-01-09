@@ -15,7 +15,7 @@ public class Main {
 		int defaultPort;
 		String password = "";
 		
-		String usageString = "craftproxy <port to bind to> <default server> <default port> [verbose] [auth]";
+		String usageString = "craftproxy <port to bind to> <default server> <default port> [verbose] [auth] [clientversion num]";
 
 		if( args.length < 3 ) {
 			System.out.println( "Usage: " + usageString );
@@ -30,12 +30,13 @@ public class Main {
 
 					     if( args[pos].equals("verbose")) Globals.setVerbose(true);
 					else if( args[pos].equals("auth"))    Globals.setAuth(true);
+					else if( args[pos].equals("clientversion")) { Globals.setClientVersion(Integer.parseInt(args[pos+1])); pos++;}
 					else                                  password = new String(args[pos]);
 
 				}
 
 			} catch (NumberFormatException nfe) {
-				System.out.println( "Unable to parse port numbers");
+				System.out.println( "Unable to parse numbers");
 				System.out.println( "Usage: " + usageString );
 				System.exit(0);
 				return;
@@ -55,6 +56,8 @@ public class Main {
 		
 		System.out.println( "Use \"end\" to stop the server");
 
+		EntityFieldIndex.init();
+		
 		PassthroughServer server = new PassthroughServer( listenPort, defaultServer, defaultPort, password );
 
 		Thread t = new Thread( server );

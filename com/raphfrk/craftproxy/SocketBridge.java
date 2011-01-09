@@ -2,7 +2,6 @@ package com.raphfrk.craftproxy;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
 
 
 public class SocketBridge implements Runnable {

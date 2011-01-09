@@ -128,7 +128,7 @@ public class Packet {
 		this();
 
 		this.server = server;
-
+		
 		try {
 			packetId = in.readByte();
 		} catch (EOFException e) {
@@ -262,6 +262,7 @@ public class Packet {
 
 		if( Globals.isVerbose() ) {
 			System.out.println( ((server)?("S->C"):"C->S") + " packet processed: " + Integer.toHexString(packetId&0xFF) );
+			System.out.println( this );
 		}
 
 
@@ -269,6 +270,14 @@ public class Packet {
 
 
 
+	}
+	
+	void resetInput(DataInputStream in) {
+		try {
+			in.reset();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 	
 	public void copy(Packet other) {

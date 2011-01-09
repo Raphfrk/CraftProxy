@@ -1,12 +1,15 @@
 package com.raphfrk.craftproxy;
 import java.io.DataOutputStream;
-import java.util.LinkedList;
 
 
 public class DownstreamMonitor extends SocketMonitor{
 	
 	DownstreamMonitor() {
 		super();
+	}
+	
+	DownstreamMonitor( SynchronizedEntityMap synchronizedEntityMap ) {
+		super(synchronizedEntityMap);
 	}
 
 	DownstreamMonitor(SocketMonitor other) {
@@ -15,6 +18,8 @@ public class DownstreamMonitor extends SocketMonitor{
 
 	@Override
 	public void process(Packet packet, DataOutputStream out) {
+
+		packet = super.convertEntityIds(packet, true);
 
 		// Use return to cancel sending packet to client
 		switch(packet.packetId) {

@@ -22,4 +22,22 @@ public class Globals {
 		authenticate = newAuth;
 	}
 	
+	static private int defaultPlayerId = 123456;
+		
+	synchronized static int getDefaultPlayerId() {
+		
+		return defaultPlayerId;
+		
+	}
+	
+	static private int clientVersion = 8;
+	
+	synchronized static int getClientVersion() {
+		return clientVersion;
+	}
+	
+	synchronized static void setClientVersion( int newClientVersion ) {
+		clientVersion = newClientVersion;
+	}
+	
 }

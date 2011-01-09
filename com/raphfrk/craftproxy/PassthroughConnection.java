@@ -85,9 +85,11 @@ public class PassthroughConnection implements Runnable {
 			informEnd();
 			return;
 		}
+		
+		PlayerRecord playerRecord = new PlayerRecord();
 
 		System.out.println( "Carrying out input handshake");
-		if( !Protocol.processLogin(inputFromClient, outputToClient) ) {
+		if( !Protocol.processLogin(inputFromClient, outputToClient, playerRecord) ) {
 
 			Protocol.kick(outputToClient, "Proxy server refused login attempt");
 			try {
@@ -161,10 +163,27 @@ public class PassthroughConnection implements Runnable {
 			return;
 		}
 
-		System.out.println( "Streams established");
+		System.out.println( "Connection to server established");
 		
-		UpstreamMonitor upstreamMonitor = new UpstreamMonitor();
-		DownstreamMonitor downstreamMonitor = new DownstreamMonitor();
+		System.out.println( "Logging in on behalf of " + playerRecord.username );
+		System.out.flush();
+		if( !Protocol.serverLogin(inputFromServer, outputToServer, playerRecord) ) {
+
+			Protocol.kick(outputToClient, "Unable to connect to backend server");
+			try {
+				inputFromClient.close();
+				outputToClient.close();
+			} catch (IOException e) {
+				System.out.println( "Unable to close connections properly");
+			} 
+			informEnd();
+			return;
+		}
+		
+		SynchronizedEntityMap synchronizedEntityMap = new SynchronizedEntityMap(playerRecord.serverEntityID);
+		
+		UpstreamMonitor upstreamMonitor = new UpstreamMonitor(synchronizedEntityMap);
+		DownstreamMonitor downstreamMonitor = new DownstreamMonitor(synchronizedEntityMap);
 		
 		upstreamMonitor.setOtherMonitor(downstreamMonitor);
 		downstreamMonitor.setOtherMonitor(upstreamMonitor);
