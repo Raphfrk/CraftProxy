@@ -35,7 +35,9 @@ public class DownstreamMonitor extends SocketMonitor{
 			return false;
 		}
 
-
+		if( packet.timeout ) {
+			return true; 
+		}
 
 		packet = super.convertEntityIds(packet, true);
 

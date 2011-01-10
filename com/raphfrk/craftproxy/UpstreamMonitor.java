@@ -36,6 +36,10 @@ public class UpstreamMonitor extends SocketMonitor {
 			
 		}
 		
+		if( packet.timeout ) {
+			return true; 
+		}
+		
 		packet = super.convertEntityIds(packet, false);
 		
 		// Use return to cancel sending packet to client
