@@ -2,6 +2,36 @@ package com.raphfrk.craftproxy;
 
 public class Globals {
 	
+	static private String password = "null";
+	
+	synchronized static String getPassword() {
+		return password;
+	}
+	
+	synchronized static void setPassword(String password) {
+		Globals.password = password;
+	}
+	
+	static private boolean quiet = false;
+
+	static boolean isQuiet() {
+		return quiet;
+	}
+	
+	synchronized static void setQuiet( boolean newQuiet ) {
+		quiet = newQuiet;
+	}
+	
+	static private boolean hell = false;
+
+	synchronized static boolean isHell() {
+		return hell;
+	}
+	
+	synchronized static void setHell( boolean newHell ) {
+		hell = newHell;
+	}
+	
 	static private boolean verbose = false;
 
 	synchronized static boolean isVerbose() {

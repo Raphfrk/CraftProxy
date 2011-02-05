@@ -58,12 +58,25 @@ public class SocketBridge implements Runnable {
 			synchronized( run ) {
 				localRun = run.get();
 			}
+			
+			int timeoutDuration = 0;
 
 			if( localRun && monitorExit ) {
 
 				currentPacket = new Packet(in, server);
 				
 				monitorExit = monitor.process(currentPacket, out);
+				
+				if( currentPacket.timeout ) {
+					if( (timeoutDuration++) > 20) {
+						if(!Globals.isQuiet()) {
+							System.out.println( "Connection timed out");
+						}
+						localRun = false;
+					}
+				} else {
+					timeoutDuration = 0;
+				}
 
 				packetIdStore.add(currentPacket.packetId);
 

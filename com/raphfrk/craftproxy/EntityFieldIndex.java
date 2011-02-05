@@ -17,6 +17,7 @@ public class EntityFieldIndex {
 		fields[0x16] = new Integer[] {0,1};
 		fields[0x17] = new Integer[] {0};
 		fields[0x18] = new Integer[] {0};
+		fields[0x19] = new Integer[] {0};
 		fields[0x1C] = new Integer[] {0};
 		fields[0x1D] = new Integer[] {0};
 		fields[0x1E] = new Integer[] {0};
@@ -26,6 +27,8 @@ public class EntityFieldIndex {
 		fields[0x22] = new Integer[] {0};
 		fields[0x26] = new Integer[] {0};
 		fields[0x27] = new Integer[] {0,1};
+		fields[0x28] = new Integer[] {0};
+		
 		
 	}
 	

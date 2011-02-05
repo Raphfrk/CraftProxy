@@ -29,7 +29,7 @@ public class SocketMonitor {
 	public void addCommand( CommandElement command ) {
 
 		synchronized( commands ) {
-			System.out.println( "adding command" );
+			//System.out.println( "adding command" );
 			commands.addLast(new CommandElement(command));
 		}
 
@@ -85,11 +85,15 @@ public class SocketMonitor {
 		}
 		
 		for( Integer offset : entityIDs ) {
-			
+			boolean printed = false;
 			Integer entityID = (Integer)packet.fields[offset];
 			
+			//System.out.println(packet);
+			//packet.printBytes();
+			//printed = true;
+			
 			if( Globals.isVerbose() ) {
-				System.out.print( "Entity ID conversion: " + entityID );
+				System.out.print( ((server)?"S->C":"C-S") + "(" + Integer.toHexString(packet.packetId) + ") Entity ID conversion: " + entityID );
 			}
 			if( server ) {
 				entityID = synchronizedEntityMap.serverToClient(entityID);
@@ -99,9 +103,14 @@ public class SocketMonitor {
 			
 			if( Globals.isVerbose() ) {
 				System.out.println( " to " + entityID );
-			}
+			}	
 			
 			packet.fields[offset] = entityID;
+			if( printed ) {
+				//System.out.println(packet);
+				packet.printBytes();
+			}
+			
 			
 		}
 		

@@ -22,7 +22,7 @@ public class Packet {
 		packetTypes.put((byte)0x02, new Class[] {String.class} );
 		packetTypes.put((byte)0x03, new Class[] {String.class} );
 		packetTypes.put((byte)0x04, new Class[] {Long.class} );
-		packetTypes.put((byte)0x05, new Class[] {Integer.class, Short.class, Short.class} );
+		packetTypes.put((byte)0x05, new Class[] {Integer.class, Short.class, Short.class, Short.class} );
 		packetTypes.put((byte)0x06, new Class[] {Integer.class, Integer.class, Integer.class});
 		packetTypes.put((byte)0x07, new Class[] {Integer.class, Integer.class, Boolean.class});
 		packetTypes.put((byte)0x08, new Class[] {Short.class });
@@ -35,11 +35,13 @@ public class Packet {
 		packetTypes.put((byte)0x0F, new Class[] {Integer.class, Byte.class, Integer.class, Byte.class, ItemElement.class});
 		packetTypes.put((byte)0x10, new Class[] {Short.class});
 		packetTypes.put((byte)0x12, new Class[] {Integer.class, Byte.class});
+		packetTypes.put((byte)0x13, new Class[] {Integer.class, Byte.class});
 		packetTypes.put((byte)0x14, new Class[] {Integer.class, String.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class, Short.class});
-		packetTypes.put((byte)0x15, new Class[] {Integer.class, Short.class, Byte.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class, Byte.class});
+		packetTypes.put((byte)0x15, new Class[] {Integer.class, Short.class, Byte.class, Short.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class, Byte.class});
 		packetTypes.put((byte)0x16, new Class[] {Integer.class, Integer.class});
 		packetTypes.put((byte)0x17, new Class[] {Integer.class, Byte.class, Integer.class, Integer.class, Integer.class });
-		packetTypes.put((byte)0x18, new Class[] {Integer.class, Byte.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class });
+		packetTypes.put((byte)0x18, new Class[] {Integer.class, Byte.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class , EntityMetadata.class});
+		packetTypes.put((byte)0x19, new Class[] {Integer.class, String.class, Integer.class, Integer.class, Integer.class, Integer.class });
 		packetTypes.put((byte)0x1C, new Class[] {Integer.class, Short.class, Short.class, Short.class });
 		packetTypes.put((byte)0x1D, new Class[] {Integer.class });
 		packetTypes.put((byte)0x1E, new Class[] {Integer.class });
@@ -49,11 +51,13 @@ public class Packet {
 		packetTypes.put((byte)0x22, new Class[] {Integer.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class});
 		packetTypes.put((byte)0x26, new Class[] {Integer.class, Byte.class});
 		packetTypes.put((byte)0x27, new Class[] {Integer.class, Integer.class});
+		packetTypes.put((byte)0x28, new Class[] {Integer.class, EntityMetadata.class});
 		packetTypes.put((byte)0x32, new Class[] {Integer.class, Integer.class, Boolean.class });
 		packetTypes.put((byte)0x33, new Class[] {Integer.class, Short.class, Integer.class, Byte.class, Byte.class, Byte.class, IntSizedByteArray.class});
 		packetTypes.put((byte)0x34, new Class[] {Integer.class, Integer.class, MultiBlockArray.class});
 		packetTypes.put((byte)0x35, new Class[] {Integer.class, Byte.class, Integer.class, Byte.class, Byte.class });
-		packetTypes.put((byte)0x3C, new Class[] {Double.class, Double.class, Float.class, IntSizedTripleByteArray.class});
+		packetTypes.put((byte)0x36, new Class[] {Integer.class, Short.class, Integer.class, Byte.class, Byte.class });
+		packetTypes.put((byte)0x3C, new Class[] {Double.class, Double.class, Double.class, Float.class, IntSizedTripleByteArray.class});
 		packetTypes.put((byte)0x64, new Class[] {Byte.class, Byte.class, String.class, Byte.class});
 		packetTypes.put((byte)0x65, new Class[] {Byte.class});
 		packetTypes.put((byte)0x66, new Class[] {Byte.class, Short.class, Byte.class, Short.class, ItemElement.class});
@@ -134,10 +138,14 @@ public class Packet {
 		} catch (EOFException e) {
 			valid = false;
 			eof = true;
-			System.out.println( ((server)?("S->C"):"C->S") + " EOF reached");
+			if(!Globals.isQuiet()) {
+				System.out.println( ((server)?("S->C"):"C->S") + " EOF reached");
+			}
 			return;
 		} catch ( SocketTimeoutException toe ) {
-			System.out.println( ((server)?("S->C"):"C->S") + " read time-out reached");
+			if(!Globals.isQuiet()) {
+				System.out.println( ((server)?("S->C"):"C->S") + " read time-out reached");
+			}
 			valid = false;
 			eof = false;
 			timeout = true;
@@ -172,6 +180,8 @@ public class Packet {
 				fields[pos++] = Protocol.getString(in);
 			} else if( current.equals(IntSizedByteArray.class)) {
 				fields[pos++] = Protocol.getIntSizedByteArray(in);
+			} else if( current.equals(EntityMetadata.class)) {
+				fields[pos++] = Protocol.getEntityMetadata(in);
 			} else if( current.equals(IntSizedTripleByteArray.class)) {
 				fields[pos++] = Protocol.getIntSizedTripleByteArray(in);
 			} else if( current.equals(MultiBlockArray.class)) {
@@ -200,6 +210,14 @@ public class Packet {
 				eof = true;
 				return;
 			}
+			
+			if( fields[pos-1] == null ) {
+				System.out.println( "null type returned: " + Integer.toHexString(packetId) );
+				valid = false;
+				eof = false;
+				timeout = false;
+				return;
+			}
 
 		}
 
@@ -224,6 +242,8 @@ public class Packet {
 					bytes.addAll(Protocol.genMultiBlockArray((MultiBlockArray)fields[pos++]));
 				} else if( current.equals(IntSizedByteArray.class)) {
 					bytes.addAll(Protocol.genIntSizedByteArray((IntSizedByteArray)fields[pos++]));
+				} else if( current.equals(EntityMetadata.class)) {
+					bytes.addAll(Protocol.genEntityMetadata((EntityMetadata)fields[pos++]));
 				} else if( current.equals(IntSizedTripleByteArray.class)) {
 					bytes.addAll(Protocol.genIntSizedTripleByteArray((IntSizedTripleByteArray)fields[pos++]));
 				} else if( current.equals(ItemArray.class)) {
@@ -293,6 +313,32 @@ public class Packet {
 		
 		
 	}
+	
+	public void printBytes() {
+		
+		if(packetId == 0x33 ) {
+			System.out.println(packetId + " -> chunk data");
+			return;
+		}
+		ByteArrayOutputStream arrayOutStream = new ByteArrayOutputStream();
+
+		DataOutputStream out = new DataOutputStream( arrayOutStream );
+
+		writeBytes(out);
+
+		try {
+			out.flush();
+		} catch (IOException e) {
+			return;
+		}
+		
+		byte[] array = arrayOutStream.toByteArray();
+		
+		for(byte b:array) {
+			System.out.print(b + ",");
+		}
+		System.out.println("");
+	}
 
 	public boolean test() {
 
@@ -307,7 +353,7 @@ public class Packet {
 		} catch (IOException e) {
 			return false;
 		}
-
+		
 		ByteArrayInputStream arrayInStream = new ByteArrayInputStream(arrayOutStream.toByteArray());
 
 		DataInputStream in = new DataInputStream( arrayInStream );

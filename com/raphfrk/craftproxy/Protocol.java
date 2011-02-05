@@ -6,9 +6,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 
@@ -243,7 +245,7 @@ public class Protocol {
 		if( itemElement.id != -1 ) {
 
 			bytes.addAll(genByte(itemElement.count));
-			bytes.addAll(genByte((byte)itemElement.damage));
+			bytes.addAll(genShort(itemElement.damage));
 
 		}
 
@@ -261,7 +263,7 @@ public class Protocol {
 
 		if( item.id != -1 ) {
 			item.count = getByte(in);
-			item.damage = getByte(in);
+			item.damage = getShort(in);
 		}
 
 		return item;
@@ -341,6 +343,11 @@ public class Protocol {
 		IntSizedTripleByteArray data = new IntSizedTripleByteArray();
 
 		data.size = getInt(in)*3;
+		
+		if( data.size < 0 || data.size > 65536 ) {
+			System.out.println( "Explosion size exceeded limit: " + data.size );
+			return null;
+		}
 
 		data.data = new byte[data.size];
 
@@ -370,7 +377,7 @@ public class Protocol {
 
 		ArrayList<Byte> bytes = new ArrayList<Byte>();
 
-		bytes.addAll(genInt(data.data.length));
+		bytes.addAll(genInt(data.data.length/3));
 
 		bytes.addAll(bytesToArrayList(data.data));
 
@@ -411,6 +418,78 @@ public class Protocol {
 		}
 
 		return itemArray;
+
+
+	}
+
+	public static ArrayList<Byte> genEntityMetadata( EntityMetadata data ) {
+
+		ArrayList<Byte> bytes = new ArrayList<Byte>();
+
+		for(int pos=0;pos<data.elements.size();pos++) {
+
+			bytes.addAll(genByte(data.ids.get(pos)));
+
+			Object currentElement = data.elements.get(pos);
+
+			if( currentElement instanceof Byte ) {
+				bytes.addAll(genByte((Byte)currentElement));
+			} else if( currentElement instanceof Short ) {
+				bytes.addAll(genShort((Short)currentElement));
+			} else if( currentElement instanceof Integer ) {
+				bytes.addAll(genInt((Integer)currentElement));
+			} else if( currentElement instanceof Float ) {
+				bytes.addAll(genFloat((Float)currentElement));
+			} else if( currentElement instanceof String ) {
+				bytes.addAll(genString((String)currentElement));
+			} else {
+				bytes.addAll(genItemElement((ItemElement)currentElement));
+				System.out.println( "unable to parse Meta Data");
+			}
+
+		}
+
+		bytes.addAll(genByte((byte)127));
+
+		return bytes;
+
+
+	}
+
+	public static EntityMetadata getEntityMetadata( DataInputStream in ) {
+
+		EntityMetadata entityMetadata = new EntityMetadata();
+
+		byte id = getByte(in);
+		byte type = (byte)((id&(0xE0)) >> 5);
+
+		do{
+
+			Object element;
+
+			switch(type) {
+			case 0: element = getByte(in); break;
+			case 1: element = getShort(in); break;
+			case 2: element = getInt(in); break;
+			case 3: element = getFloat(in); break;
+			case 4: element = getString(in); break;
+			case 5: element = getItemElement(in); break;
+			default: 
+				System.out.println( "Unable to process meta data"); 
+				element = "";
+				break;
+			}
+
+			entityMetadata.elements.add(element);
+			entityMetadata.ids.add(id);
+			
+			id = getByte(in);
+			type = (byte)((id&(0xE0)) >> 5);
+
+		} while (id!=127);
+
+
+		return entityMetadata;
 
 
 	}
@@ -493,6 +572,12 @@ public class Protocol {
 			System.out.println( "Negative length string detected");
 			return "";
 		}
+		
+		if( length > 5000 ) {
+			System.out.println( "Strings above 5000 characters are blocked");
+			System.out.println( "This can represent a login attack");
+			return "";
+		}
 
 		int pos = 0;
 		byte[] buffer = new byte[length];
@@ -525,12 +610,39 @@ public class Protocol {
 		return bytes;
 
 	}
+	
+	static String sha1Hash( String inputString ) {
+
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA");
+			md.reset();
+
+			md.update(inputString.getBytes("utf-8"));
+			
+			BigInteger bigInt = new BigInteger( md.digest() );
+
+			return bigInt.toString( 16 ) ;
+
+		} catch (Exception ioe) {
+			return "hash error";
+		}
+
+	}
+	
+	static String getHashString() {
+		long hashLong;
+		synchronized( hashGenerator ) {
+			hashLong = hashGenerator.nextLong();
+		}
+
+		return Long.toHexString(hashLong);
+	}
 
 	// High level functions
 
 	static SecureRandom hashGenerator = new SecureRandom();
 
-	static boolean processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient, PlayerRecord playerRecord ) {
+	static boolean processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient, PlayerRecord playerRecord , String source ) {
 
 		Packet handshakeFromClient = new Packet();
 		if( !getPacket(handshakeFromClient, inputFromClient, (byte)0x02)) {
@@ -543,19 +655,14 @@ public class Protocol {
 
 		String username = (String)handshakeFromClient.fields[0];
 
-		System.out.println( username + " attempting to connect");
+		System.out.println( username + " attempting to connect from " + source );
 
 		playerRecord.username = new String( username );
 
 		String hashString;
 
 		if( Globals.isAuth() ) {
-			long hashLong;
-			synchronized( hashGenerator ) {
-				hashLong = hashGenerator.nextLong();
-			}
-
-			hashString = Long.toHexString(hashLong);
+			hashString = getHashString();
 		} else {
 			hashString = "-";
 		}
@@ -579,19 +686,39 @@ public class Protocol {
 		if( !getPacket(clientLogin, inputFromClient, (byte)0x01)) {
 			return false;
 		}
-
+		
 		if( Globals.isInfo() ) {
 			System.out.println( "Client Login:\n" + clientLogin + "\n");
 		}
+		
+		String password = (String)clientLogin.fields[2];
+		
+		String[] split = password.split(":");
+		
+		boolean forward = false;
+		
+		if( split.length == 2 ) {
+			String newHashString = split[0];
+			String hashPassword = sha1Hash(Globals.getPassword() + hashString + newHashString);
+			if(split[1].equals(hashPassword)) {
+				forward = true;
+				playerRecord.forward = true;
+			}
+		}
 
-		if( Globals.isAuth() && !authenticated( username , hashString ) ) {
+		if( Globals.isAuth() && !forward && !authenticated( username , hashString ) ) {
 
 			System.out.println( username + " failed auth");
+						
 			return false;
 		} else if( !Globals.isAuth() ) {
 			System.out.println( "Skipping auth" );
 		} else {
-			System.out.println( username + " passed auth" );
+			if( forward ) {
+				System.out.println( username + " is being forwarded" );
+			} else {
+				System.out.println( username + " passed auth" );
+			}
 		}
 
 		/*playerRecord.clientEntityID = Globals.getDefaultPlayerId();
@@ -647,16 +774,20 @@ public class Protocol {
 
 		String hashString = (String)handshakeFromServer.fields[0];
 
+		String passwordSHA = "Password";
+		String newHashString = getHashString();
+		
 		if( !hashString.equals("-") ) {
-			System.out.println( "Authentication is enabled on the back-end server, unable to connect");
-			return false;
+			System.out.println( "Authentication is enabled on the back-end server, attempting to use password");
+			
+			passwordSHA = newHashString + ":" + sha1Hash(Globals.getPassword() + hashString + newHashString);
 		}
 
 		Packet proxyLogin = new Packet( (byte)0x01, 
 				new Object[] { 
 				new Integer(Globals.getClientVersion()),
 				new String(playerRecord.username),
-				new String("Password"),
+				new String(passwordSHA),
 				new Long(0),
 				new Byte((byte)0)
 		},
@@ -695,7 +826,7 @@ public class Protocol {
 		Packet newPacket = new Packet( input , false );
 
 		boolean first = true;
-		
+
 		long startTime = System.currentTimeMillis();
 
 		while( !newPacket.valid || first ) {
@@ -734,7 +865,9 @@ public class Protocol {
 
 		try {
 			String authURLString = new String( "http://www.minecraft.net/game/checkserver.jsp?user=" + username + "&serverId=" + hashString);
-			System.out.println( "Authing with " + authURLString);
+			if(!Globals.isQuiet()) {
+				System.out.println( "Authing with " + authURLString);
+			}
 			System.out.flush();
 			URL minecraft = new URL(authURLString);
 			URLConnection minecraftConnection = minecraft.openConnection();
@@ -748,7 +881,9 @@ public class Protocol {
 
 			if( reply != null && reply.equals("YES")) {
 				in.close();
-				System.out.println( "Auth successful");
+				if(!Globals.isQuiet()) {
+					System.out.println( "Auth successful");
+				}
 				return true;
 			}
 		} catch (MalformedURLException mue) {

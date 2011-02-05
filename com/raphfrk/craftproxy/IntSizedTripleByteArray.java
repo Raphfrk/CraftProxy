@@ -16,7 +16,7 @@ public class IntSizedTripleByteArray {
 			return false;
 		} else {
 			
-			IntSizedByteArray other = (IntSizedByteArray)obj;
+			IntSizedTripleByteArray other = (IntSizedTripleByteArray)obj;
 			
 			if( other.data == null ) {
 				return false;
@@ -26,6 +26,21 @@ public class IntSizedTripleByteArray {
 			
 		}
 
+	}
+	
+	@Override
+	public String toString() {
+		
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("("+size+")");
+		
+		for( byte current : data ) {
+			sb.append(":" + current );
+		}
+		
+		return sb.toString();
+		
 	}
 
 }
