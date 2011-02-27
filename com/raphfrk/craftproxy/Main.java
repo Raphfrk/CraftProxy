@@ -25,7 +25,7 @@ public class Main {
 		int defaultPort;
 		String password = "";
 
-		String usageString = "craftproxy <port to bind to> <default server> <default port> [hell] [quiet] [reconnectfile path_to_file] [verbose] [info] [auth] [clientversion num]";
+		String usageString = "craftproxy <port to bind to> <default server> <default port> [hell] [quiet] [reconnectfile path_to_file] [verbose] [info] [auth] [clientversion num] [delay num]";
 
 		if( args.length < 3 ) {
 			System.out.println( "Usage: " + usageString );
