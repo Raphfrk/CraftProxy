@@ -14,9 +14,11 @@ public class LocalhostIPFactory {
 		
 		synchronized(counter) {
 			
+			do{
 			high = (counter>>8) & 0x00FF;
 			low = counter & 0x00FF;
 			counter ++;
+			} while ( high == 0 || high == 255 || low == 0 || low == 255 );
 			
 		}
 		return "127." + high + "." + low + ".2";

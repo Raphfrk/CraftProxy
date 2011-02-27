@@ -343,7 +343,7 @@ public class Protocol {
 		IntSizedTripleByteArray data = new IntSizedTripleByteArray();
 
 		data.size = getInt(in)*3;
-		
+
 		if( data.size < 0 || data.size > 65536 ) {
 			System.out.println( "Explosion size exceeded limit: " + data.size );
 			return null;
@@ -482,7 +482,7 @@ public class Protocol {
 
 			entityMetadata.elements.add(element);
 			entityMetadata.ids.add(id);
-			
+
 			id = getByte(in);
 			type = (byte)((id&(0xE0)) >> 5);
 
@@ -572,7 +572,7 @@ public class Protocol {
 			System.out.println( "Negative length string detected");
 			return "";
 		}
-		
+
 		if( length > 5000 ) {
 			System.out.println( "Strings above 5000 characters are blocked");
 			System.out.println( "This can represent a login attack");
@@ -610,7 +610,7 @@ public class Protocol {
 		return bytes;
 
 	}
-	
+
 	static String sha1Hash( String inputString ) {
 
 		try {
@@ -618,7 +618,7 @@ public class Protocol {
 			md.reset();
 
 			md.update(inputString.getBytes("utf-8"));
-			
+
 			BigInteger bigInt = new BigInteger( md.digest() );
 
 			return bigInt.toString( 16 ) ;
@@ -628,7 +628,7 @@ public class Protocol {
 		}
 
 	}
-	
+
 	static String getHashString() {
 		long hashLong;
 		synchronized( hashGenerator ) {
@@ -686,17 +686,17 @@ public class Protocol {
 		if( !getPacket(clientLogin, inputFromClient, (byte)0x01)) {
 			return false;
 		}
-		
+
 		if( Globals.isInfo() ) {
 			System.out.println( "Client Login:\n" + clientLogin + "\n");
 		}
-		
+
 		String password = (String)clientLogin.fields[2];
-		
+
 		String[] split = password.split(":");
-		
+
 		boolean forward = false;
-		
+
 		if( split.length == 2 ) {
 			String newHashString = split[0];
 			String hashPassword = sha1Hash(Globals.getPassword() + hashString + newHashString);
@@ -709,7 +709,7 @@ public class Protocol {
 		if( Globals.isAuth() && !forward && !authenticated( username , hashString ) ) {
 
 			System.out.println( username + " failed auth");
-						
+
 			return false;
 		} else if( !Globals.isAuth() ) {
 			System.out.println( "Skipping auth" );
@@ -744,6 +744,10 @@ public class Protocol {
 	}
 
 	static boolean serverLogin( DataInputStream inputFromServer, DataOutputStream outputToServer, PlayerRecord playerRecord ) {
+		return serverLogin(inputFromServer, outputToServer, playerRecord, false );
+	}
+
+	static boolean serverLogin( DataInputStream inputFromServer, DataOutputStream outputToServer, PlayerRecord playerRecord, boolean passKick ) {
 
 		Packet handshakeToServer = new Packet( 
 				(byte)0x02, 
@@ -776,10 +780,10 @@ public class Protocol {
 
 		String passwordSHA = "Password";
 		String newHashString = getHashString();
-		
+
 		if( !hashString.equals("-") ) {
 			System.out.println( "Authentication is enabled on the back-end server, attempting to use password");
-			
+
 			passwordSHA = newHashString + ":" + sha1Hash(Globals.getPassword() + hashString + newHashString);
 		}
 
@@ -804,26 +808,33 @@ public class Protocol {
 		}
 
 		Packet serverLogin = new Packet();
-		if( !getPacket( serverLogin, inputFromServer, (byte)0x01)) {
+		if( !getPacket( serverLogin, inputFromServer, (passKick)?null:((byte)0x01))) {
 			return false;
 		}
-		
-		serverLogin.fields[4] = new Byte(Globals.isHell()?((byte)-1):(byte)0);
+
+		if(serverLogin.packetId != (byte)0x01 && serverLogin.packetId != -1) {
+			return false;
+		}
+
+		if(serverLogin.packetId == (byte)0x01) {
+			serverLogin.fields[4] = new Byte(Globals.isHell()?((byte)-1):(byte)0);
+		}
 
 		if( Globals.isInfo() ) {
 			System.out.println( "Received login from server:\n" + serverLogin + "\n");
 			System.out.flush();
 		}
 
-		playerRecord.serverEntityID = (Integer)serverLogin.fields[0];
+		if(serverLogin.packetId == (byte)0x01) {
+			playerRecord.serverEntityID = (Integer)serverLogin.fields[0];
+		}
 		playerRecord.loginPacket = serverLogin;
 
-
-		return true;
+		return serverLogin.packetId == 0x01;
 
 	}
 
-	static boolean getPacket( Packet packet, DataInputStream input, byte packetId ) {
+	static boolean getPacket( Packet packet, DataInputStream input, Byte packetId ) {
 
 		Packet newPacket = new Packet( input , false );
 
@@ -835,7 +846,7 @@ public class Protocol {
 
 			first = false;			
 
-			if( newPacket.valid && newPacket.packetId != packetId ) {
+			if( newPacket.valid && packetId != null && newPacket.packetId != packetId ) {
 				System.out.println( "Correct packet " + packetId + " not received");
 				System.out.println("Packet received: " + newPacket.packetId );
 				System.out.println(newPacket);

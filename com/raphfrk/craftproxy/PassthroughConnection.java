@@ -235,7 +235,7 @@ public class PassthroughConnection implements Runnable {
 				System.out.println( "Logging in on behalf of " + playerRecord.username );
 				System.out.flush();
 
-				if( !Protocol.serverLogin(inputFromServer, outputToServer, playerRecord) ) {
+				if( !Protocol.serverLogin(inputFromServer, outputToServer, playerRecord, true) ) {
 					try {
 						socketToServer.close();
 					} catch (IOException e1) {
@@ -243,7 +243,11 @@ public class PassthroughConnection implements Runnable {
 					}
 					cnt++;
 					if( cnt >= repeatAttempts ) {
-						Protocol.kick(outputToClient, "Unable to connect to backend server");
+						if(playerRecord.loginPacket != null && playerRecord.loginPacket.packetId == -1) {
+							Protocol.kick(outputToClient, (String)playerRecord.loginPacket.fields[0]);
+						} else {
+							Protocol.kick(outputToClient, "Unable to connect to backend server");
+						}
 						try {
 							inputFromClient.close();
 							outputToClient.close();
