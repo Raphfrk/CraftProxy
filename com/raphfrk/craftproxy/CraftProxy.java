@@ -23,14 +23,9 @@ public class CraftProxy extends JavaPlugin {
 	
 	File folder;
 
-	public CraftProxy(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File folder, File plugin, ClassLoader cLoader) {
-		super(pluginLoader, instance, desc, folder, plugin, cLoader);
-		this.folder = folder;				
-	}
-	
 	public void onEnable() {
 	
-		
+		folder = getDataFolder();
 		log = Logger.getLogger("Minecraft");
 		
 		if(!folder.exists()) {
