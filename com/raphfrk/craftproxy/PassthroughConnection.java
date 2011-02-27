@@ -262,10 +262,10 @@ public class PassthroughConnection implements Runnable {
 					}
 					if( cnt+1 >= repeatAttempts ) {
 						System.out.println( "Connection failed, trying again");
-						try {
-							Thread.sleep(repeatDelay);
-						} catch (InterruptedException e) {}
 					}
+					try {
+						Thread.sleep(Globals.getDelay());
+					} catch (InterruptedException e) {}
 
 				} else {
 					success = true;

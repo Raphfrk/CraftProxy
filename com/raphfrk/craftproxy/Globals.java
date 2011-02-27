@@ -80,4 +80,14 @@ public class Globals {
 		clientVersion = newClientVersion;
 	}
 	
+	static private int delay = 5500;
+	
+	synchronized static int getDelay() {
+		return delay;
+	}
+	
+	synchronized static void setDelay( int delay ) {
+		Globals.delay = delay;
+	}
+	
 }
