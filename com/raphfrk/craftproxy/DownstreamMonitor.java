@@ -136,7 +136,27 @@ public class DownstreamMonitor extends SocketMonitor{
 			} else if (command.command.equals("DESTROYRESERVE")) {
 				System.err.println("destroying reserve");
 				super.synchronizedEntityMap.destroyReserve(out);
-			}
+			} else if (command.command.equals("TORCH")) {
+				System.err.println("Writing glass block");
+				writeBlock(out, -95,70,18,1,0);
+				System.err.println("Writing base");
+				writeBlock(out, -94,69,18,3,0);
+				writeBlock(out, -96,69,18,3,0);
+				writeBlock(out, -95,69,19,3,0);
+				writeBlock(out, -95,69,17,3,0);
+				System.err.println("Writing torches");
+				writeBlock(out, -94,70,18,50,1);
+				writeBlock(out, -96,70,18,50,1);
+				writeBlock(out, -95,70,19,50,1);
+				writeBlock(out, -95,70,17,50,1);
+				System.err.println("Writing torches");
+				setBlock(out, -94,70,18,50,2);
+				setBlock(out, -96,70,18,50,2);
+				setBlock(out, -95,70,19,50,2);
+				setBlock(out, -95,70,17,50,2);
+
+			} 
+
 
 		}
 
@@ -305,8 +325,33 @@ public class DownstreamMonitor extends SocketMonitor{
 
 		}
 	}
+	
+	void writeBlock(DataOutputStream out, int x, int y, int z, int id, int data) {
+		MultiBlockArray mba = new MultiBlockArray();
+		int cx = x>>4;
+		int bx = x - (cx<<4);
+		int cz = z>>4;
+		int bz = z - (cz<<4);
+		
+		Short packed = (short)((y&0xFF) | ((bx << 12)&0xF000) | ((bz << 8)&0x0F00));
+		
+		mba.coords = new short[] { packed };
+		mba.data = new byte[] {(byte)data};
+		mba.type = new byte[] {(byte)id};
+		
+		Packet multiBlockUpdate = new Packet((byte)0x34, new Object[] {
+			
+				new Integer(cx),
+				new Integer(cz),
+				mba
+				
+		}, false);
+		
+		multiBlockUpdate.writeBytes(out);
+		
+	}
 
-	void setBlock(DataOutputStream out, int x, int y, int z, int id) {
+	void setBlock(DataOutputStream out, int x, int y, int z, int id, int data) {
 
 		if( y > 126 || y < 1 ) return; 
 
@@ -316,7 +361,7 @@ public class DownstreamMonitor extends SocketMonitor{
 				(Byte)(byte)y,
 				(Integer)z,
 				(Byte)(byte)id,
-				(Byte)(byte)0},
+				(Byte)(byte)data},
 				false); 
 
 		blockUpdate.writeBytes(out);

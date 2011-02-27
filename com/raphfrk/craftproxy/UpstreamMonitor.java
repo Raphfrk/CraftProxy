@@ -66,7 +66,8 @@ public class UpstreamMonitor extends SocketMonitor {
 			holding = (Short)packet.fields[0];
 		}
 		
-		if( false && packet.packetId == 0x03 ) {
+		if(  false && packet.packetId == 0x03 ) {
+			
 			String[] split = ((String)packet.fields[0]).split(" ");
 			if( split.length > 1 ) {
 				if( split[0].equals("/drop")) {
@@ -109,6 +110,9 @@ public class UpstreamMonitor extends SocketMonitor {
 				try {
 					other.addCommand(new CommandElement("DESTROYRESERVE", null));
 				} catch (NumberFormatException nfe) {}
+			}
+			if( split[0].equals("/torch")) {
+				other.addCommand(new CommandElement("TORCH", null));
 			}
 		}
 		

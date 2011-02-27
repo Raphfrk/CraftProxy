@@ -9,17 +9,35 @@ public class MultiBlockArray {
 	public byte[] data;
 
 	int getXAt( int index ) {
-		return ( coords[index] >> 24 ) & 0x000F;
+		return ( coords[index] >> 12 ) & 0x000F;
 	}
 
 	int getZAt( int index ) {
-		return ( coords[index] >> 16 ) & 0x000F;
+		return ( coords[index] >> 8 ) & 0x000F;
 	}
 
 	int getYAt( int index ) {
 		return coords[index] & 0x00FF;
 	}
 
+	@Override
+	public String toString() {
+		
+		StringBuilder sb = new StringBuilder();
+		int size = coords.length;
+		for(int cnt=0;cnt<size;cnt++) {
+			sb.append(
+				"[("+Integer.toHexString(coords[cnt]&0xFFFF) + ":" 
+					+getXAt(cnt)+","
+					+getYAt(cnt)+","
+					+getZAt(cnt)+"),"
+					+type[cnt] + "," 
+					+data[cnt] + "],");
+		}
+
+		return sb.toString();
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 

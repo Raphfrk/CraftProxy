@@ -807,6 +807,8 @@ public class Protocol {
 		if( !getPacket( serverLogin, inputFromServer, (byte)0x01)) {
 			return false;
 		}
+		
+		serverLogin.fields[4] = new Byte(Globals.isHell()?((byte)-1):(byte)0);
 
 		if( Globals.isInfo() ) {
 			System.out.println( "Received login from server:\n" + serverLogin + "\n");

@@ -70,7 +70,7 @@ public class Globals {
 		
 	}
 	
-	static private int clientVersion = 8;
+	static private int clientVersion = 9;
 	
 	synchronized static int getClientVersion() {
 		return clientVersion;

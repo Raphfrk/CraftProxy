@@ -104,6 +104,12 @@ public class MyPropertiesFile {
 		}
 	}
 	
+	void removeRecord(String name) {
+		synchronized(syncObject) {
+			databaseTable.remove(name);		
+		}
+	}
+	
 	int getInt( String name ) {
 		synchronized(syncObject) {
 			return Integer.parseInt(databaseTable.get(name));	

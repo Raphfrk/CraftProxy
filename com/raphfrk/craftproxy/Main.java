@@ -25,7 +25,7 @@ public class Main {
 		int defaultPort;
 		String password = "";
 
-		String usageString = "craftproxy <port to bind to> <default server> <default port> [verbose] [info] [auth] [clientversion num]";
+		String usageString = "craftproxy <port to bind to> <default server> <default port> [hell] [quiet] [reconnectfile path_to_file] [verbose] [info] [auth] [clientversion num]";
 
 		if( args.length < 3 ) {
 			System.out.println( "Usage: " + usageString );
@@ -48,6 +48,7 @@ public class Main {
 					else if( args[pos].equals("clientversion")){ Globals.setClientVersion(Integer.parseInt(args[pos+1])); pos++;}
 					else if( args[pos].equals("password"))     { Globals.setPassword(args[pos+1]); pos++;}
 					else if( args[pos].equals("quiet"))          Globals.setQuiet(true);
+					else if( args[pos].equals("reconnectfile")){ ReconnectCache.init(args[pos+1]); pos++;}
 					else                                         password = new String(args[pos]); // game password - not used
 
 				}
@@ -71,6 +72,10 @@ public class Main {
 			System.out.println( "Name authentication enabled");
 		}
 
+		if( !ReconnectCache.isSet() ) {
+			System.out.println( "WARNING: reconnectfile parameter not set");
+			System.out.println( "WARNING: players will be connected to the default server regardless of last server connected to");
+		}
 
 		System.out.println( "Use \"end\" to stop the server");
 
@@ -98,7 +103,8 @@ public class Main {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
+			
+			ReconnectCache.save();
 			server.kill();
 		} else {
 			System.out.println("Server console disabled");
@@ -110,6 +116,7 @@ public class Main {
 						}
 					}
 				} catch (InterruptedException ie) {
+					ReconnectCache.save();
 					server.kill();
 				}
 			}

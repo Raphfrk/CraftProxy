@@ -115,6 +115,10 @@ public class PassthroughConnection implements Runnable {
 
 		SynchronizedEntityMap synchronizedEntityMap = null;
 
+		String defaultHostname = hostname;
+		int defaultPort = port;
+		boolean initialConnection = true;
+
 		while( port != -1 ) {
 
 			int repeatAttempts = 5;
@@ -129,6 +133,13 @@ public class PassthroughConnection implements Runnable {
 
 			while( !success ) {
 
+				if( initialConnection ) {
+					String fullAddress = ReconnectCache.get(playerRecord.username);
+
+					hostname = ReconnectCache.getHost(fullAddress, defaultHostname);
+					port = ReconnectCache.getPort(fullAddress, defaultPort);
+				}
+
 				try {
 
 					if( hostname.trim().startsWith("localhost")) {
@@ -137,9 +148,9 @@ public class PassthroughConnection implements Runnable {
 							System.out.print("Attempting to connect to: " + hostname + ":" + port + " from " + fakeLocalIP );
 						}
 						socketToServer = new Socket(hostname,
-								                    port,
-								                    InetAddress.getByName(fakeLocalIP),
-								                    0);
+								port,
+								InetAddress.getByName(fakeLocalIP),
+								0);
 						if(!Globals.isQuiet()) {
 							System.out.println(":" + socketToServer.getLocalPort());
 						}
@@ -158,6 +169,11 @@ public class PassthroughConnection implements Runnable {
 						System.out.println( "Unable to connect to server at " + hostname + ":" + port);
 					}
 					try {
+						if( cnt <= repeatAttempts ) {
+							cnt++;
+							ReconnectCache.remove(playerRecord.username);
+							continue;
+						}
 						if(!Globals.isQuiet()) {
 							System.out.println( "Closing client connection");
 						}
@@ -237,6 +253,9 @@ public class PassthroughConnection implements Runnable {
 						informEnd();
 						return;
 					}
+					if( cnt==2 && initialConnection ) {
+						ReconnectCache.remove(playerRecord.username);
+					}
 					if( cnt+1 >= repeatAttempts ) {
 						System.out.println( "Connection failed, trying again");
 						try {
@@ -264,6 +283,8 @@ public class PassthroughConnection implements Runnable {
 					return;
 				}
 			}
+
+			ReconnectCache.store(playerRecord.username, hostname, port);
 
 			if( synchronizedEntityMap == null ) {
 				synchronizedEntityMap = new SynchronizedEntityMap(playerRecord.serverEntityID);
@@ -325,6 +346,8 @@ public class PassthroughConnection implements Runnable {
 					} catch (InterruptedException e) {}
 				}
 			}
+			
+			initialConnection = false;
 
 			if(!Globals.isQuiet()) {
 				System.out.println( "Closing connection to server" );
