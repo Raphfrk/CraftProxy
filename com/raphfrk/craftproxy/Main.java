@@ -25,7 +25,7 @@ public class Main {
 		int defaultPort;
 		String password = "";
 
-		String usageString = "craftproxy <port to bind to> <default server> <default port> [hell] [quiet] [reconnectfile path_to_file] [verbose] [info] [auth] [clientversion num] [delay num]";
+		String usageString = "craftproxy <port to bind to> <default server> <default port> [hell] [quiet] [reconnectfile path_to_file] [verbose] [info] [auth] [clientversion num] [delay num] [local_alias alias]";
 
 		if( args.length < 3 ) {
 			System.out.println( "Usage: " + usageString );
@@ -47,6 +47,7 @@ public class Main {
 					else if( args[pos].equals("auth"))           Globals.setAuth(true);
 					else if( args[pos].equals("clientversion")){ Globals.setClientVersion(Integer.parseInt(args[pos+1])); pos++;}
 					else if( args[pos].equals("password"))     { Globals.setPassword(args[pos+1]); pos++;}
+					else if( args[pos].equals("local_alias"))  { Globals.setLocalAlias(args[pos+1]); pos++;}
 					else if( args[pos].equals("quiet"))          Globals.setQuiet(true);
 					else if( args[pos].equals("reconnectfile")){ ReconnectCache.init(args[pos+1]); pos++;}
 					else if( args[pos].equals("delay"))		   { Globals.setDelay(Integer.parseInt(args[pos+1])); pos++;}

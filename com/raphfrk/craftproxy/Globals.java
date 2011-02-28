@@ -12,6 +12,16 @@ public class Globals {
 		Globals.password = password;
 	}
 	
+	static private String localAlias = "";
+	
+	synchronized static String getLocalAlias() {
+		return localAlias;
+	}
+	
+	synchronized static void setLocalAlias(String localAlias) {
+		Globals.localAlias = localAlias;
+	}
+	
 	static private boolean quiet = false;
 
 	static boolean isQuiet() {

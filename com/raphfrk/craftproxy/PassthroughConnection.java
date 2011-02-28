@@ -139,6 +139,13 @@ public class PassthroughConnection implements Runnable {
 					hostname = ReconnectCache.getHost(fullAddress, defaultHostname);
 					port = ReconnectCache.getPort(fullAddress, defaultPort);
 				}
+				
+				if(hostname.equals(Globals.getLocalAlias())) {
+					if(!Globals.isQuiet()) {
+						System.out.println("replacing " + hostname + " with localhost" );
+					}
+					hostname = "localhost";
+				}
 
 				try {
 
