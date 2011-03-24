@@ -34,6 +34,7 @@ public class Packet {
 		packetTypes.put((byte)0x0E, new Class[] {Byte.class, Integer.class, Byte.class, Integer.class, Byte.class});
 		packetTypes.put((byte)0x0F, new Class[] {Integer.class, Byte.class, Integer.class, Byte.class, ItemElement.class});
 		packetTypes.put((byte)0x10, new Class[] {Short.class});
+		packetTypes.put((byte)0x11, new Class[] {Integer.class, Byte.class, Integer.class, Byte.class, Integer.class});
 		packetTypes.put((byte)0x12, new Class[] {Integer.class, Byte.class});
 		packetTypes.put((byte)0x13, new Class[] {Integer.class, Byte.class});
 		packetTypes.put((byte)0x14, new Class[] {Integer.class, String.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class, Short.class});
@@ -42,6 +43,7 @@ public class Packet {
 		packetTypes.put((byte)0x17, new Class[] {Integer.class, Byte.class, Integer.class, Integer.class, Integer.class });
 		packetTypes.put((byte)0x18, new Class[] {Integer.class, Byte.class, Integer.class, Integer.class, Integer.class, Byte.class, Byte.class , EntityMetadata.class});
 		packetTypes.put((byte)0x19, new Class[] {Integer.class, String.class, Integer.class, Integer.class, Integer.class, Integer.class });
+		packetTypes.put((byte)0x1B, new Class[] {Float.class, Float.class, Float.class, Float.class, Boolean.class, Boolean.class });
 		packetTypes.put((byte)0x1C, new Class[] {Integer.class, Short.class, Short.class, Short.class });
 		packetTypes.put((byte)0x1D, new Class[] {Integer.class });
 		packetTypes.put((byte)0x1E, new Class[] {Integer.class });
