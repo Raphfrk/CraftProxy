@@ -32,6 +32,16 @@ public class Globals {
 		quiet = newQuiet;
 	}
 	
+	static private boolean debug = false;
+
+	static boolean isDebug() {
+		return debug;
+	}
+	
+	synchronized static void setDebug( boolean newDebug) {
+		debug = newDebug;
+	}
+	
 	static private boolean hell = false;
 
 	synchronized static boolean isHell() {
@@ -80,7 +90,7 @@ public class Globals {
 		
 	}
 	
-	static private int clientVersion = 9;
+	static private int clientVersion = 10;
 	
 	synchronized static int getClientVersion() {
 		return clientVersion;

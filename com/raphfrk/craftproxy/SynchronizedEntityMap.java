@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class SynchronizedEntityMap {
 
-	final int playerServerId;
+	int playerServerId;
 	
 	final int increment = 3;
 	
@@ -23,6 +23,11 @@ public class SynchronizedEntityMap {
 	SynchronizedEntityMap(int playerServerId) {
 		this.playerServerId = playerServerId;
 		reset();
+	}
+	
+	synchronized void addToReserved(int playerServerId) {
+		this.playerServerId = playerServerId;
+		addToReserved();
 	}
 
 	synchronized void addToReserved() {
@@ -87,7 +92,7 @@ public class SynchronizedEntityMap {
 		addMap(playerServerId,Globals.getDefaultPlayerId());
 
 	}
-
+	
 	synchronized public void addMap( Integer server , Integer client ) {
 
 		clientToServer.put(client, server);

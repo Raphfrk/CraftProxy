@@ -51,7 +51,7 @@ public class MiscUtils {
 
 	static HashSet<String> fileToSet( String filename , boolean forceLowerCase ) {
 		
-		String filePath = "serverport" + slash + filename;
+		String filePath = filename;
 		
 		try {
 			(new File( filePath )).createNewFile();

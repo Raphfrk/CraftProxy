@@ -642,11 +642,11 @@ public class Protocol {
 
 	static SecureRandom hashGenerator = new SecureRandom();
 
-	static boolean processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient, PlayerRecord playerRecord , String source ) {
+	static String processLogin( DataInputStream inputFromClient, DataOutputStream outputToClient, PlayerRecord playerRecord , String source ) {
 
 		Packet handshakeFromClient = new Packet();
 		if( !getPacket(handshakeFromClient, inputFromClient, (byte)0x02)) {
-			return false;
+			return "Bad handshake packet";
 		}
 
 		if( Globals.isInfo() ) {
@@ -679,16 +679,23 @@ public class Protocol {
 		}
 
 		if( !handshakeToClient.writeBytes(outputToClient) ) {
-			return false;
+			return "Unable to send handshake to client";
 		}
 
 		Packet clientLogin = new Packet();
 		if( !getPacket(clientLogin, inputFromClient, (byte)0x01)) {
-			return false;
+			return "Login packet not sent from client";
 		}
 
 		if( Globals.isInfo() ) {
 			System.out.println( "Client Login:\n" + clientLogin + "\n");
+		}
+		
+		Integer version = (Integer)clientLogin.fields[0];
+		
+		if(version != Globals.getClientVersion()) {
+			System.out.println(username + " tried to connect with the wrong client version");
+			return "Protocol version mismatch (Proxy = " + Globals.getClientVersion() + " Client = " + version + ")";
 		}
 
 		String password = (String)clientLogin.fields[2];
@@ -705,12 +712,17 @@ public class Protocol {
 				playerRecord.forward = true;
 			}
 		}
+		
+		if(BanList.banned(username)) {
+			System.out.println( username + " is banned");
+			return "User is on proxy ban list";
+		}
 
 		if( Globals.isAuth() && !forward && !authenticated( username , hashString ) ) {
 
 			System.out.println( username + " failed auth");
 
-			return false;
+			return "Proxy is unable to authenticate username";
 		} else if( !Globals.isAuth() ) {
 			System.out.println( "Skipping auth" );
 		} else {
@@ -739,7 +751,7 @@ public class Protocol {
 			return false;
 		}*/
 
-		return true;
+		return null;
 
 	}
 

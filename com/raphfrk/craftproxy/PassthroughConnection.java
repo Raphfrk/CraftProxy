@@ -92,15 +92,17 @@ public class PassthroughConnection implements Runnable {
 
 		System.out.println( "Carrying out input handshake");
 		String ipString = socketToClient.getInetAddress().getHostAddress();
-		if( !Protocol.processLogin(inputFromClient, outputToClient, playerRecord, ipString) ) {
+		String kickMessage = null;
+		if( (kickMessage = Protocol.processLogin(inputFromClient, outputToClient, playerRecord, ipString)) != null ) {
 
-			Protocol.kick(outputToClient, "Proxy server refused login attempt");
+			Protocol.kick(outputToClient, kickMessage);
 			try {
-				ArrayList<Byte> kick = Protocol.genKickPacket(
+				/*ArrayList<Byte> kick = Protocol.genKickPacket(
 				"Unable to open connection to target server");
 				DataOutputStream outData = new DataOutputStream( socketToClient.getOutputStream() );
 				outData.write(Protocol.tobytes(kick));
-				outData.flush();
+				outData.flush();*/
+				outputToClient.flush();
 				socketToClient.close();
 				inputFromClient.close();
 				outputToClient.close();
@@ -299,7 +301,9 @@ public class PassthroughConnection implements Runnable {
 
 			if( synchronizedEntityMap == null ) {
 				synchronizedEntityMap = new SynchronizedEntityMap(playerRecord.serverEntityID);
-			} 
+			} else {
+				synchronizedEntityMap.addToReserved(playerRecord.serverEntityID);
+			}
 
 			SocketMonitor upstreamMonitor;
 			SocketMonitor downstreamMonitor;

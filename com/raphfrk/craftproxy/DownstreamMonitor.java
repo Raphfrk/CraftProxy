@@ -69,7 +69,7 @@ public class DownstreamMonitor extends SocketMonitor{
 				return false;
 			} else if( command.command.equals("INVALIDBREAK")) {
 				return false;
-			} else if( command.command.equals("MOVEMENT")) {
+			} /*else if( command.command.equals("MOVEMENT")) {
 
 				Object[] posArray = (Object[])command.target;
 
@@ -155,7 +155,7 @@ public class DownstreamMonitor extends SocketMonitor{
 				setBlock(out, -95,70,19,50,2);
 				setBlock(out, -95,70,17,50,2);
 
-			} 
+			} */
 
 
 		}
@@ -207,7 +207,7 @@ public class DownstreamMonitor extends SocketMonitor{
 		}
 
 		packet = super.convertEntityIds(packet, true);
-				
+		
 		/*if( packet.packetId == 0x0d && Math.pow(((Double)packet.fields[0])-posx,2) > 1000) {
 			System.out.println("Teleport detected");
 			synchronizedEntityMap.listClientIds();

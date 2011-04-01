@@ -15,7 +15,7 @@ import java.util.HashMap;
 public class Packet {
 
 	HashMap<Byte,Class[]> packetTypes = new HashMap<Byte,Class[]>();
-
+	
 	Packet() {
 		packetTypes.put((byte)0x00, new Class[] {});
 		packetTypes.put((byte)0x01, new Class[] {Integer.class, String.class, String.class, Long.class, Byte.class});
@@ -59,6 +59,7 @@ public class Packet {
 		packetTypes.put((byte)0x34, new Class[] {Integer.class, Integer.class, MultiBlockArray.class});
 		packetTypes.put((byte)0x35, new Class[] {Integer.class, Byte.class, Integer.class, Byte.class, Byte.class });
 		packetTypes.put((byte)0x36, new Class[] {Integer.class, Short.class, Integer.class, Byte.class, Byte.class });
+		packetTypes.put((byte)0x46, new Class[] {Byte.class});
 		packetTypes.put((byte)0x3C, new Class[] {Double.class, Double.class, Double.class, Float.class, IntSizedTripleByteArray.class});
 		packetTypes.put((byte)0x64, new Class[] {Byte.class, Byte.class, String.class, Byte.class});
 		packetTypes.put((byte)0x65, new Class[] {Byte.class});
@@ -129,7 +130,7 @@ public class Packet {
 
 
 	}
-
+	
 	Packet( DataInputStream in, boolean server ) {
 		this();
 
@@ -343,6 +344,10 @@ public class Packet {
 	}
 
 	public boolean test() {
+		
+		if(!Globals.isDebug()) {
+			return true;
+		}
 
 		ByteArrayOutputStream arrayOutStream = new ByteArrayOutputStream();
 
