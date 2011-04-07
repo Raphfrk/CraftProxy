@@ -377,6 +377,10 @@ public class Packet {
 		DataInputStream in = new DataInputStream( arrayInStream );
 
 		Packet newPacket = new Packet( in , server );
+		
+		if(newPacket.readFail) {
+			return false;
+		}
 
 		boolean match = this.equals(newPacket);
 

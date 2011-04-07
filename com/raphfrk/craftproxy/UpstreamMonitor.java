@@ -207,7 +207,7 @@ public class UpstreamMonitor extends SocketMonitor {
 
 		if( !packet.test() ) {
 			//System.exit(0);
-			System.out.println("Packet Format Error: Forcing connection break");
+			System.out.println("Packet Format Error (from client): Forcing connection break");
 			other.addCommand(new CommandElement( "INVALIDBREAK" , null ));
 			return false;
 		}

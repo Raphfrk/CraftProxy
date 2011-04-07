@@ -3,6 +3,8 @@ import java.io.DataOutputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import com.raphfrk.craftproxy.SocketMonitor.CommandElement;
+
 
 public class DownstreamMonitor extends SocketMonitor{
 
@@ -291,7 +293,9 @@ public class DownstreamMonitor extends SocketMonitor{
 
 
 		if( !packet.test() ) {
-			System.exit(0);
+			System.out.println("Packet Format Error (from server): Forcing connection break");
+			other.addCommand(new CommandElement( "INVALIDBREAK" , null ));
+			return false;
 		}
 
 		//System.out.print("New: ");

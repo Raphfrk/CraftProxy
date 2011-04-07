@@ -69,9 +69,8 @@ public class SynchronizedEntityMap {
 	}*/
 	
 	synchronized void removeEntity( Integer serverId ) {
-		HashMap<Integer,Integer> x = new HashMap<Integer,Integer>();
 
-		x.values().toArray(new Integer[0]);
+		//System.out.println("Removing entity " + serverId);
 
 		if( !serverToClient.containsKey(serverId)) {
 			System.out.println("Attempting to remove non-existance entity " + serverId);
@@ -86,10 +85,6 @@ public class SynchronizedEntityMap {
 	
 
 	synchronized int serverToClient( Integer serverId ) {
-
-		HashMap<Integer,Integer> x = new HashMap<Integer,Integer>();
-
-		x.values().toArray(new Integer[0]);
 
 		if( !serverToClient.containsKey(serverId)) {
 			//System.out.println("serverToClient does not contain " + serverId);
