@@ -302,7 +302,7 @@ public class PassthroughConnection implements Runnable {
 			if( synchronizedEntityMap == null ) {
 				synchronizedEntityMap = new SynchronizedEntityMap(playerRecord.serverEntityID);
 			} else {
-				synchronizedEntityMap.addToReserved(playerRecord.serverEntityID);
+				synchronizedEntityMap.setPlayerServerId(playerRecord.serverEntityID);
 			}
 
 			SocketMonitor upstreamMonitor;
@@ -404,7 +404,7 @@ public class PassthroughConnection implements Runnable {
 				hostname = ((DownstreamMonitor)downstreamBridge.monitor).hostName;
 				System.out.println( "Redirect to " + hostname + ":" + port );
 				if( synchronizedEntityMap != null ) {
-					//synchronizedEntityMap.destroy(outputToClient);
+					synchronizedEntityMap.destroy(outputToClient);
 				}
 			}
 		}

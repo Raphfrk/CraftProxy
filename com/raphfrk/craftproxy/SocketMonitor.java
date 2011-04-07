@@ -5,6 +5,8 @@ import java.util.LinkedList;
 
 public class SocketMonitor {
 
+	IntSizedByteArray chunkCache = null;
+	
 	SynchronizedEntityMap synchronizedEntityMap;
 
 	SocketMonitor other;

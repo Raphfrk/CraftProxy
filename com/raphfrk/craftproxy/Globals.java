@@ -4,87 +4,87 @@ public class Globals {
 	
 	static private String password = "null";
 	
-	synchronized static String getPassword() {
+	public synchronized static String getPassword() {
 		return password;
 	}
 	
-	synchronized static void setPassword(String password) {
+	public synchronized static void setPassword(String password) {
 		Globals.password = password;
 	}
 	
 	static private String localAlias = "";
 	
-	synchronized static String getLocalAlias() {
+	public synchronized static String getLocalAlias() {
 		return localAlias;
 	}
 	
-	synchronized static void setLocalAlias(String localAlias) {
+	public synchronized static void setLocalAlias(String localAlias) {
 		Globals.localAlias = localAlias;
 	}
 	
 	static private boolean quiet = false;
 
-	static boolean isQuiet() {
+	public synchronized static boolean isQuiet() {
 		return quiet;
 	}
 	
-	synchronized static void setQuiet( boolean newQuiet ) {
+	public synchronized static void setQuiet( boolean newQuiet ) {
 		quiet = newQuiet;
 	}
 	
 	static private boolean debug = false;
 
-	static boolean isDebug() {
+	public synchronized static boolean isDebug() {
 		return debug;
 	}
 	
-	synchronized static void setDebug( boolean newDebug) {
+	public synchronized static void setDebug( boolean newDebug) {
 		debug = newDebug;
 	}
 	
 	static private boolean hell = false;
 
-	synchronized static boolean isHell() {
+	public synchronized static boolean isHell() {
 		return hell;
 	}
 	
-	synchronized static void setHell( boolean newHell ) {
+	public synchronized static void setHell( boolean newHell ) {
 		hell = newHell;
 	}
 	
 	static private boolean verbose = false;
 
-	synchronized static boolean isVerbose() {
+	public synchronized static boolean isVerbose() {
 		return verbose;
 	}
 	
-	synchronized static void setVerbose( boolean newVerbose ) {
+	public synchronized static void setVerbose( boolean newVerbose ) {
 		verbose = newVerbose;
 	}
 	
 	static private boolean info = false;
 
-	synchronized static boolean isInfo() {
+	public synchronized static boolean isInfo() {
 		return info;
 	}
 	
-	synchronized static void setInfo( boolean newInfo ) {
+	public synchronized static void setInfo( boolean newInfo ) {
 		info = newInfo;
 	}
 	
 	static private boolean authenticate = false;
 	
-	synchronized static boolean isAuth() {
+	public synchronized static boolean isAuth() {
 		return authenticate;
 	}
 	
-	synchronized static void setAuth( boolean newAuth ) {
+	public synchronized static void setAuth( boolean newAuth ) {
 		authenticate = newAuth;
 	}
 	
 	static private int defaultPlayerId = 123456;
 		
-	synchronized static int getDefaultPlayerId() {
+	public synchronized static int getDefaultPlayerId() {
 		
 		return defaultPlayerId;
 		
@@ -92,21 +92,21 @@ public class Globals {
 	
 	static private int clientVersion = 10;
 	
-	synchronized static int getClientVersion() {
+	public synchronized static int getClientVersion() {
 		return clientVersion;
 	}
 	
-	synchronized static void setClientVersion( int newClientVersion ) {
+	public synchronized static void setClientVersion( int newClientVersion ) {
 		clientVersion = newClientVersion;
 	}
 	
 	static private int delay = 5500;
 	
-	synchronized static int getDelay() {
+	public synchronized static int getDelay() {
 		return delay;
 	}
 	
-	synchronized static void setDelay( int delay ) {
+	public synchronized static void setDelay( int delay ) {
 		Globals.delay = delay;
 	}
 	

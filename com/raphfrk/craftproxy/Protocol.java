@@ -56,14 +56,24 @@ public class Protocol {
 		return ret;
 
 	}
+	
+	public static ArrayList<Byte> bytesToArrayList( byte[] inp) {
 
-	public static ArrayList<Byte> bytesToArrayList( byte[] inp ) {
+		return bytesToArrayList(inp, inp.length);
+		
+	}
+
+	public static ArrayList<Byte> bytesToArrayList( byte[] inp, int size ) {
 
 		ArrayList<Byte> list = new ArrayList<Byte>();
 
 		int cnt=0;
 		for( byte current: inp ) {
 			list.add(current);
+			cnt++;
+			if(cnt==size) {
+				return list;
+			}
 		}
 
 		return list;
@@ -79,12 +89,13 @@ public class Protocol {
 		return bytes;
 	}
 
-	public static boolean getBoolean( DataInputStream in ) {
+	public static boolean getBoolean( Packet packet, DataInputStream in ) {
 
 		try {
 			return (in.readByte())!=0;
 		} catch (IOException e) {
-			System.out.println( "Unable to getByte" );
+			packet.readFail = true;
+			System.out.println( "Unable to getBoolean" );
 			return false;
 		}
 
@@ -99,11 +110,12 @@ public class Protocol {
 		return bytes;
 	}
 
-	public static byte getByte( DataInputStream in ) {
+	public static byte getByte( Packet packet, DataInputStream in ) {
 
 		try {
 			return in.readByte();
 		} catch (IOException e) {
+			packet.readFail = true;
 			System.out.println( "Unable to getByte" );
 			return 0;
 		}
@@ -120,11 +132,12 @@ public class Protocol {
 		return bytes;
 	}
 
-	public static short getShort( DataInputStream in ) {
+	public static short getShort( Packet packet, DataInputStream in ) {
 
 		try {
 			return in.readShort();
 		} catch (IOException e) {
+			packet.readFail = true;
 			System.out.println( "Unable to getShort" );
 			return 0;
 		}
@@ -143,11 +156,12 @@ public class Protocol {
 		return bytes;
 	}
 
-	public static int getInt( DataInputStream in ) {
+	public static int getInt( Packet packet, DataInputStream in ) {
 
 		try {
 			return in.readInt();
 		} catch (IOException e) {
+			packet.readFail = true;
 			System.out.println( "Unable to getInt" );
 			return 0;
 		}
@@ -170,11 +184,12 @@ public class Protocol {
 		return bytes;
 	}
 
-	public static long getLong( DataInputStream in ) {
+	public static long getLong( Packet packet, DataInputStream in ) {
 
 		try {
 			return in.readLong();
 		} catch (IOException e) {
+			packet.readFail = true;
 			System.out.println( "Unable to getLong" );
 			return 0;
 		}
@@ -197,11 +212,12 @@ public class Protocol {
 		return bytesToArrayList(array.toByteArray());
 	}
 
-	public static float getFloat( DataInputStream in ) {
+	public static float getFloat( Packet packet, DataInputStream in ) {
 
 		try {
 			return in.readFloat();
 		} catch (IOException e) {
+			packet.readFail = true;
 			System.out.println( "Unable to getFloat" );
 			return 0;
 		}
@@ -225,11 +241,12 @@ public class Protocol {
 		return bytesToArrayList(array.toByteArray());
 	}
 
-	public static double getDouble( DataInputStream in ) {
+	public static double getDouble( Packet packet, DataInputStream in ) {
 
 		try {
 			return in.readDouble();
 		} catch (IOException e) {
+			packet.readFail = true;
 			System.out.println( "Unable to getLong" );
 			return 0;
 		}
@@ -254,16 +271,16 @@ public class Protocol {
 
 	}
 
-	public static ItemElement getItemElement( DataInputStream in ) {
+	public static ItemElement getItemElement( Packet packet, DataInputStream in ) {
 
 		ItemElement item= new ItemElement();
 
-		item.id = getShort(in);
+		item.id = getShort(packet, in);
 
 
 		if( item.id != -1 ) {
-			item.count = getByte(in);
-			item.damage = getShort(in);
+			item.count = getByte(packet, in);
+			item.damage = getShort(packet, in);
 		}
 
 		return item;
@@ -295,14 +312,23 @@ public class Protocol {
 
 	}
 
-	public static IntSizedByteArray getIntSizedByteArray( DataInputStream in ) {
+	public static IntSizedByteArray getIntSizedByteArray( Packet packet, DataInputStream in , IntSizedByteArray intSizedByteArray) {
 
-		IntSizedByteArray data = new IntSizedByteArray();
+		IntSizedByteArray data;
+		
+		int size = getInt(packet, in);
+		
+		if(intSizedByteArray == null) {
+			data = new IntSizedByteArray();
+		} else {
+			data = intSizedByteArray;
+		}
 
-		data.size = getInt(in);
-
-		data.data = new byte[data.size];
-
+		if(data.data == null || data.data.length < size) {
+			data.data = new byte[size];
+		} 
+		data.size = size;
+		
 		int offset=0;
 
 		int read = 0;
@@ -329,22 +355,23 @@ public class Protocol {
 
 		ArrayList<Byte> bytes = new ArrayList<Byte>();
 
-		bytes.addAll(genInt(data.data.length));
+		bytes.addAll(genInt(data.size));
 
-		bytes.addAll(bytesToArrayList(data.data));
+		bytes.addAll(bytesToArrayList(data.data, data.size));
 
 		return bytes;
 
 
 	}
 
-	public static IntSizedTripleByteArray getIntSizedTripleByteArray( DataInputStream in ) {
+	public static IntSizedTripleByteArray getIntSizedTripleByteArray( Packet packet, DataInputStream in ) {
 
 		IntSizedTripleByteArray data = new IntSizedTripleByteArray();
 
-		data.size = getInt(in)*3;
+		data.size = getInt(packet, in)*3;
 
 		if( data.size < 0 || data.size > 65536 ) {
+			packet.readFail = true;
 			System.out.println( "Explosion size exceeded limit: " + data.size );
 			return null;
 		}
@@ -386,13 +413,13 @@ public class Protocol {
 
 	}
 
-	public static ItemArray getItemArray( DataInputStream in ) {
+	public static ItemArray getItemArray( Packet packet, DataInputStream in ) {
 
 		ItemArray itemArray = new ItemArray();
 
 		itemArray.array = new ArrayList<ItemElement>();
 
-		int count = getShort(in);
+		int count = getShort(packet, in);
 
 		//System.out.println( "Inv length: " + count );
 
@@ -402,15 +429,15 @@ public class Protocol {
 
 			ItemElement current = new ItemElement();
 
-			current.id = getShort(in);
+			current.id = getShort(packet, in);
 
 			if( Globals.isVerbose() ) {
 				System.out.println( "ID: " + current.id );
 			}
 
 			if( current.id != -1 ) {
-				current.count = getByte(in);
-				current.damage = getShort(in);
+				current.count = getByte(packet, in);
+				current.damage = getShort(packet, in);
 			}
 
 			itemArray.array.add(current);
@@ -456,11 +483,11 @@ public class Protocol {
 
 	}
 
-	public static EntityMetadata getEntityMetadata( DataInputStream in ) {
+	public static EntityMetadata getEntityMetadata( Packet packet, DataInputStream in ) {
 
 		EntityMetadata entityMetadata = new EntityMetadata();
 
-		byte id = getByte(in);
+		byte id = getByte(packet, in);
 		byte type = (byte)((id&(0xE0)) >> 5);
 
 		do{
@@ -468,14 +495,15 @@ public class Protocol {
 			Object element;
 
 			switch(type) {
-			case 0: element = getByte(in); break;
-			case 1: element = getShort(in); break;
-			case 2: element = getInt(in); break;
-			case 3: element = getFloat(in); break;
-			case 4: element = getString(in); break;
-			case 5: element = getItemElement(in); break;
+			case 0: element = getByte(packet, in); break;
+			case 1: element = getShort(packet, in); break;
+			case 2: element = getInt(packet, in); break;
+			case 3: element = getFloat(packet, in); break;
+			case 4: element = getString(packet, in); break;
+			case 5: element = getItemElement(packet, in); break;
 			default: 
 				System.out.println( "Unable to process meta data"); 
+				packet.readFail = true;
 				element = "";
 				break;
 			}
@@ -483,7 +511,7 @@ public class Protocol {
 			entityMetadata.elements.add(element);
 			entityMetadata.ids.add(id);
 
-			id = getByte(in);
+			id = getByte(packet, in);
 			type = (byte)((id&(0xE0)) >> 5);
 
 		} while (id!=127);
@@ -513,11 +541,11 @@ public class Protocol {
 
 	}
 
-	public static MultiBlockArray getMultiBlockArray( DataInputStream in ) {
+	public static MultiBlockArray getMultiBlockArray( Packet packet, DataInputStream in ) {
 
 		MultiBlockArray multiBlockArray = new MultiBlockArray();
 
-		int count = getShort(in);
+		int count = getShort(packet, in);
 
 		multiBlockArray.coords = new short[count];
 		multiBlockArray.data   = new byte[count];
@@ -526,15 +554,15 @@ public class Protocol {
 		int pos;
 
 		for(pos=0;pos<count;pos++) {
-			multiBlockArray.coords[pos] = getShort(in); 
+			multiBlockArray.coords[pos] = getShort(packet, in); 
 		}
 
 		for(pos=0;pos<count;pos++) {
-			multiBlockArray.type[pos] = getByte(in); 
+			multiBlockArray.type[pos] = getByte(packet, in); 
 		}
 
 		for(pos=0;pos<count;pos++) {
-			multiBlockArray.data[pos] = getByte(in); 
+			multiBlockArray.data[pos] = getByte(packet, in); 
 		}
 
 		return multiBlockArray;
@@ -564,18 +592,20 @@ public class Protocol {
 
 	}
 
-	public static String getString( DataInputStream in ) {
+	public static String getString( Packet packet, DataInputStream in ) {
 
-		short length = getShort(in);
+		short length = getShort(packet, in);
 
 		if( length < 0 ) {
 			System.out.println( "Negative length string detected");
+			packet.readFail = true;
 			return "";
 		}
 
 		if( length > 5000 ) {
 			System.out.println( "Strings above 5000 characters are blocked");
 			System.out.println( "This can represent a login attack");
+			packet.readFail = true;
 			return "";
 		}
 
@@ -586,6 +616,7 @@ public class Protocol {
 				pos += in.read(buffer, pos, length-pos);
 			} catch (IOException e) {
 				System.out.println( "Unable to read string");
+				packet.readFail = true;
 				return "";
 			}
 		}
@@ -594,6 +625,7 @@ public class Protocol {
 			return new String( buffer , "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			System.out.print("UTF-8 not supported in getString");
+			packet.readFail = true;
 			return new String( "" );
 		}
 

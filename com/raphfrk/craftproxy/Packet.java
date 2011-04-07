@@ -83,6 +83,7 @@ public class Packet {
 	public boolean eof = false;
 	public boolean valid = false;
 	public boolean timeout = false;
+	public boolean readFail = false;
 
 	Packet( byte id , Object[] fields , boolean server ) {
 
@@ -132,6 +133,12 @@ public class Packet {
 	}
 	
 	Packet( DataInputStream in, boolean server ) {
+		
+		this(in, server, null);
+		
+	}
+	
+	Packet( DataInputStream in, boolean server, IntSizedByteArray intSizedByteArray ) {
 		this();
 
 		this.server = server;
@@ -180,33 +187,33 @@ public class Packet {
 		for( Class current: classes ) {
 
 			if( current.equals(String.class)) {
-				fields[pos++] = Protocol.getString(in);
+				fields[pos++] = Protocol.getString(this, in);
 			} else if( current.equals(IntSizedByteArray.class)) {
-				fields[pos++] = Protocol.getIntSizedByteArray(in);
+				fields[pos++] = Protocol.getIntSizedByteArray(this, in, intSizedByteArray);
 			} else if( current.equals(EntityMetadata.class)) {
-				fields[pos++] = Protocol.getEntityMetadata(in);
+				fields[pos++] = Protocol.getEntityMetadata(this, in);
 			} else if( current.equals(IntSizedTripleByteArray.class)) {
-				fields[pos++] = Protocol.getIntSizedTripleByteArray(in);
+				fields[pos++] = Protocol.getIntSizedTripleByteArray(this, in);
 			} else if( current.equals(MultiBlockArray.class)) {
-				fields[pos++] = Protocol.getMultiBlockArray(in);
+				fields[pos++] = Protocol.getMultiBlockArray(this, in);
 			} else if( current.equals(ItemArray.class)) {
-				fields[pos++] = Protocol.getItemArray(in);
+				fields[pos++] = Protocol.getItemArray(this, in);
 			} else if( current.equals(ItemElement.class)) {
-				fields[pos++] = Protocol.getItemElement(in);
+				fields[pos++] = Protocol.getItemElement(this, in);
 			} else if( current.equals(Double.class)) {
-				fields[pos++] = Protocol.getDouble(in);
+				fields[pos++] = Protocol.getDouble(this, in);
 			} else if( current.equals(Float.class)) {
-				fields[pos++] = Protocol.getFloat(in);
+				fields[pos++] = Protocol.getFloat(this, in);
 			} else if( current.equals(Integer.class)) {
-				fields[pos++] = Protocol.getInt(in);
+				fields[pos++] = Protocol.getInt(this, in);
 			} else if( current.equals(Long.class)) {
-				fields[pos++] = Protocol.getLong(in);
+				fields[pos++] = Protocol.getLong(this, in);
 			} else if( current.equals(Short.class)) {
-				fields[pos++] = Protocol.getShort(in);
+				fields[pos++] = Protocol.getShort(this, in);
 			} else if( current.equals(Byte.class)) {
-				fields[pos++] = Protocol.getByte(in);
+				fields[pos++] = Protocol.getByte(this, in);
 			} else if( current.equals(Boolean.class)) {
-				fields[pos++] = Protocol.getBoolean(in);
+				fields[pos++] = Protocol.getBoolean(this, in);
 			} else {
 				System.out.println( "Unable to handle field type: " + current.getName() );
 				valid = false;
@@ -344,6 +351,10 @@ public class Packet {
 	}
 
 	public boolean test() {
+		
+		if(readFail) {
+			return false;
+		}
 		
 		if(!Globals.isDebug()) {
 			return true;

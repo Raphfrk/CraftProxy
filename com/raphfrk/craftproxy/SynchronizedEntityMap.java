@@ -25,6 +25,14 @@ public class SynchronizedEntityMap {
 		reset();
 	}
 	
+
+	
+	synchronized void setPlayerServerId(int playerServerId) {
+		this.playerServerId = playerServerId;
+		reset();
+	}
+
+	
 	synchronized void addToReserved(int playerServerId) {
 		this.playerServerId = playerServerId;
 		addToReserved();
@@ -36,6 +44,46 @@ public class SynchronizedEntityMap {
 		reset();
 
 	}
+	
+	/*synchronized int initEntity( Integer serverId ) {
+		HashMap<Integer,Integer> x = new HashMap<Integer,Integer>();
+
+		x.values().toArray(new Integer[0]);
+
+		if( !serverToClient.containsKey(serverId)) {
+			int otherId = getNextCounter(); 
+			while( clientToServer.containsKey(otherId) || reservedIds.contains(otherId)) 
+				{
+				otherId = getNextCounter(); 
+			}
+			System.out.println("clientToServer does not contain " + otherId );
+			
+			if(otherId != serverId && Globals.isInfo()) {
+				System.out.println( "Entity Id Collision (S->C), mapping " + serverId + " to " + otherId );
+			}
+			addMap(serverId, otherId);
+		}
+		
+		return serverToClient.get(serverId);
+
+	}*/
+	
+	synchronized void removeEntity( Integer serverId ) {
+		HashMap<Integer,Integer> x = new HashMap<Integer,Integer>();
+
+		x.values().toArray(new Integer[0]);
+
+		if( !serverToClient.containsKey(serverId)) {
+			System.out.println("Attempting to remove non-existance entity " + serverId);
+			return;
+		}
+		
+		int clientId = serverToClient.get(serverId);
+		serverToClient.remove(serverId);
+		clientToServer.remove(clientId);
+		
+	}
+	
 
 	synchronized int serverToClient( Integer serverId ) {
 
@@ -64,6 +112,7 @@ public class SynchronizedEntityMap {
 
 	synchronized int clientToServer( Integer clientId ) {
 		if( !clientToServer.containsKey(clientId)) {
+			System.out.println("client sending unknown entity ID " + clientId);
 			int otherId = getNextCounter(); 
 			while( serverToClient.containsKey(otherId) ) {
 				otherId = getNextCounter(); 
@@ -106,7 +155,7 @@ public class SynchronizedEntityMap {
 		return clientToServer.keySet();
 	}
 
-	synchronized void initAll(DataOutputStream out) {
+/*	synchronized void initAll(DataOutputStream out) {
 
 		if(!Globals.isQuiet()) {
 			System.out.println( "Sending entity init burst");
@@ -153,8 +202,9 @@ public class SynchronizedEntityMap {
 		}
 
 	}
+	*/
 	
-	synchronized void destroyReserve( DataOutputStream out ) {
+	/*synchronized void destroyReserve( DataOutputStream out ) {
 		
 		if(!Globals.isQuiet()) {
 			System.out.println( "Destroy reserve list");
@@ -184,8 +234,9 @@ public class SynchronizedEntityMap {
 		}
 		
 	}
+	*/
 	
-	synchronized void nukeReserve( DataOutputStream out ) {
+	/*synchronized void nukeReserve( DataOutputStream out ) {
 		
 		if(!Globals.isQuiet()) {
 			System.out.println( "Destroy reserve list");
@@ -234,6 +285,7 @@ public class SynchronizedEntityMap {
 		}
 		
 	}
+	*/
 
 	void listClientIds() {
 		System.out.println("Client ID list:");
@@ -267,12 +319,12 @@ public class SynchronizedEntityMap {
 		for( Integer current : clientEntities ) {
 			if( current != clientId && current != -1 ) {
 
-				Packet initEntity = new Packet( (byte)0x1e, 
+				/*Packet initEntity = new Packet( (byte)0x1e, 
 						new Object[] { 
 						new Integer(current)
 				},
 				true
-				);
+				);*/
 				
 				Packet destroyEntity = new Packet( (byte)0x1D, 
 						new Object[] { 
@@ -285,7 +337,7 @@ public class SynchronizedEntityMap {
 					System.out.println( "Sending destroy packet\n" + destroyEntity);
 				}
 
-				initEntity.writeBytes(out);
+				//initEntity.writeBytes(out);
 				destroyEntity.writeBytes(out);
 
 			}

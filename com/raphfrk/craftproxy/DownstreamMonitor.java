@@ -33,6 +33,8 @@ public class DownstreamMonitor extends SocketMonitor{
 	LinkedList<Packet> packetFIFO = new LinkedList<Packet>();
 	boolean playerMoved = false;
 
+	boolean destroyed = false;
+
 	@Override
 	public boolean process(Packet packet, DataOutputStream out) {
 
@@ -49,20 +51,25 @@ public class DownstreamMonitor extends SocketMonitor{
 		if( packet.timeout ) {
 			return true; 
 		}
-		
+
 		//System.out.print("Old: ");
 		//packet.printBytes();
-		
+
+		if(!destroyed) {
+			destroyed = true;
+			//synchronizedEntityMap.destroy(out);
+			//synchronizedEntityMap.addToReserved();
+
+		}
 
 		CommandElement command;
 
 		while( (command = getCommand()) != null ) {
 
-	
 			if(!Globals.isQuiet() && !command.command.equals("MOVEMENT")) {
 				System.out.println( "Command received from upstream: " + command.command );
 			}
-			
+
 			if( command.command.equals("REDIRECTBREAK")) {
 				return false;
 			} else if( command.command.equals("EOFBREAK")) {
@@ -82,7 +89,7 @@ public class DownstreamMonitor extends SocketMonitor{
 
 			} else if (command.command.equals("DROP")) {
 				Packet pickupSpawn = new Packet( (byte)0x15 , new Object[] {
-						
+
 						new Integer((Integer)command.target),
 						new Short((short)4),
 						new Byte((byte)1),
@@ -93,7 +100,7 @@ public class DownstreamMonitor extends SocketMonitor{
 						new Byte((byte)0),
 						new Byte((byte)0),
 						new Byte((byte)0)
-						
+
 				}, true);
 				System.out.println( "Dropping at " + posx + ", " + posy + ", " + posz );
 				pickupSpawn.writeBytes(out);
@@ -101,10 +108,10 @@ public class DownstreamMonitor extends SocketMonitor{
 				EntityMetadata emd = new EntityMetadata();
 				emd.elements.add(new Byte((byte)0));
 				emd.ids.add(new Byte((byte)0));
-				
-				
+
+
 				Packet pickupSpawn = new Packet( (byte)0x18 , new Object[] {
-						
+
 						new Integer((Integer)command.target),
 						new Byte((byte)57),
 						new Integer(posx*32),
@@ -113,7 +120,7 @@ public class DownstreamMonitor extends SocketMonitor{
 						new Byte((byte)0),
 						new Byte((byte)0),
 						emd
-						
+
 				}, true);
 				System.err.println( "Dropping mob at " + posx + ", " + posy + ", " + posz );
 				pickupSpawn.writeBytes(out);
@@ -173,10 +180,7 @@ public class DownstreamMonitor extends SocketMonitor{
 
 				//System.out.println("Move Packet: " + packet);
 				//System.out.println("Coords: " + ((Double)packet.fields[0])*32 + ", " + ((Double)packet.fields[3])*32 );
-				
-				synchronizedEntityMap.destroy(out);
-				synchronizedEntityMap.addToReserved();
-				
+
 				packet.writeBytes(out);
 
 				while( !packetFIFO.isEmpty() ) {
@@ -191,9 +195,11 @@ public class DownstreamMonitor extends SocketMonitor{
 				//System.out.println("Move Packet: " + packet);
 
 				packet.writeBytes( out );
+
+				chunkCache = new IntSizedByteArray();
 			}
 		}
-				
+
 		if( packet.packetId == 0x18 && packet.fields[1].equals((Byte)(byte)91) ) {
 			//System.out.println( "Mob Spawn: " + packet );
 		}
@@ -202,23 +208,25 @@ public class DownstreamMonitor extends SocketMonitor{
 			//System.out.println( "Entity spawn: " + packet );
 		}
 
+		int oldEntityId=0;
 		if( packet.packetId == 0x1D ) {
+			oldEntityId = (Integer)packet.fields[0];
 			//System.out.println( "Entity destroy: " + packet );
 		}
 
 		packet = super.convertEntityIds(packet, true);
-		
+
 		/*if( packet.packetId == 0x0d && Math.pow(((Double)packet.fields[0])-posx,2) > 1000) {
 			System.out.println("Teleport detected");
 			synchronizedEntityMap.listClientIds();
 		}
-		
+
 		packet.printBytes();
 
 		if( packet.packetId != 51 ) {
 			System.out.println(packet);
 		}*/
-		
+
 		if( packet.packetId == 0x18 && packet.fields[1].equals((Byte)(byte)91) ) {
 			//System.out.println( "Mob Spawn (after conversion): " + packet );
 		}
@@ -269,11 +277,14 @@ public class DownstreamMonitor extends SocketMonitor{
 		case ((byte)0x33): {
 
 			int x = ((Integer)packet.fields[0])>>4;
-				int z = ((Integer)packet.fields[2])>>4;
+			int z = ((Integer)packet.fields[2])>>4;
 
-				chunks.add(new ChunkLoc(x,z));
+			chunks.add(new ChunkLoc(x,z));
 
-				break;
+			break;
+		}
+		case ((byte)0x1d) : {
+			super.synchronizedEntityMap.removeEntity(oldEntityId);
 		}
 
 		}
@@ -285,9 +296,9 @@ public class DownstreamMonitor extends SocketMonitor{
 
 		//System.out.print("New: ");
 		//packet.printBytes();
-		
+
 		//if(packet.packetId != 0x1E) {
-			packet.writeBytes(out);
+		packet.writeBytes(out);
 		//}
 
 
@@ -325,30 +336,30 @@ public class DownstreamMonitor extends SocketMonitor{
 
 		}
 	}
-	
+
 	void writeBlock(DataOutputStream out, int x, int y, int z, int id, int data) {
 		MultiBlockArray mba = new MultiBlockArray();
 		int cx = x>>4;
 		int bx = x - (cx<<4);
 		int cz = z>>4;
 		int bz = z - (cz<<4);
-		
+
 		Short packed = (short)((y&0xFF) | ((bx << 12)&0xF000) | ((bz << 8)&0x0F00));
-		
+
 		mba.coords = new short[] { packed };
 		mba.data = new byte[] {(byte)data};
 		mba.type = new byte[] {(byte)id};
-		
+
 		Packet multiBlockUpdate = new Packet((byte)0x34, new Object[] {
-			
+
 				new Integer(cx),
 				new Integer(cz),
 				mba
-				
+
 		}, false);
-		
+
 		multiBlockUpdate.writeBytes(out);
-		
+
 	}
 
 	void setBlock(DataOutputStream out, int x, int y, int z, int id, int data) {

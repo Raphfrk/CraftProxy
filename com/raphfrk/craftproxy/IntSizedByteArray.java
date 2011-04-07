@@ -21,7 +21,7 @@ public class IntSizedByteArray {
 			if( other.data == null ) {
 				return false;
 			} else {
-				return Arrays.equals(this.data, other.data) && this.size==other.size;
+				return this.size==other.size;
 			}
 			
 		}
