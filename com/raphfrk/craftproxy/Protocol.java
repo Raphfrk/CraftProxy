@@ -65,7 +65,7 @@ public class Protocol {
 
 	public static ArrayList<Byte> bytesToArrayList( byte[] inp, int size ) {
 
-		ArrayList<Byte> list = new ArrayList<Byte>();
+		ArrayList<Byte> list = new ArrayList<Byte>(size);
 
 		int cnt=0;
 		for( byte current: inp ) {
