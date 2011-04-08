@@ -62,10 +62,21 @@ public class Protocol {
 		return bytesToArrayList(inp, inp.length);
 		
 	}
-
+	
 	public static ArrayList<Byte> bytesToArrayList( byte[] inp, int size ) {
+		return bytesToArrayList(inp, size, null);
+	}
 
-		ArrayList<Byte> list = new ArrayList<Byte>(size);
+	public static ArrayList<Byte> bytesToArrayList( byte[] inp, int size, ArrayList<Byte> prev) {
+
+		ArrayList<Byte> list;
+		
+		if(prev==null) {
+			list = new ArrayList<Byte>(size);
+		} else {
+			list = prev;
+			list.clear();
+		}
 
 		int cnt=0;
 		for( byte current: inp ) {
@@ -312,7 +323,7 @@ public class Protocol {
 
 	}
 
-	public static IntSizedByteArray getIntSizedByteArray( Packet packet, DataInputStream in , IntSizedByteArray intSizedByteArray) {
+	public static IntSizedByteArray getIntSizedByteArray( Packet packet, DataInputStream in , IntSizedByteArray intSizedByteArray, ArrayList<Byte> arrayListByte) {
 
 		IntSizedByteArray data;
 		

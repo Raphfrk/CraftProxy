@@ -1,9 +1,8 @@
 package com.raphfrk.craftproxy;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
-
-import com.raphfrk.craftproxy.SocketMonitor.CommandElement;
 
 
 public class DownstreamMonitor extends SocketMonitor{
@@ -199,6 +198,7 @@ public class DownstreamMonitor extends SocketMonitor{
 				packet.writeBytes( out );
 
 				chunkCache = new IntSizedByteArray();
+				arrayListByte = new ArrayList<Byte>();
 			}
 		}
 

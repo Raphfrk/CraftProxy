@@ -134,11 +134,11 @@ public class Packet {
 	
 	Packet( DataInputStream in, boolean server ) {
 		
-		this(in, server, null);
+		this(in, server, null, null);
 		
 	}
 	
-	Packet( DataInputStream in, boolean server, IntSizedByteArray intSizedByteArray ) {
+	Packet( DataInputStream in, boolean server, IntSizedByteArray intSizedByteArray, ArrayList<Byte> arrayListByte) {
 		this();
 
 		this.server = server;
@@ -189,7 +189,7 @@ public class Packet {
 			if( current.equals(String.class)) {
 				fields[pos++] = Protocol.getString(this, in);
 			} else if( current.equals(IntSizedByteArray.class)) {
-				fields[pos++] = Protocol.getIntSizedByteArray(this, in, intSizedByteArray);
+				fields[pos++] = Protocol.getIntSizedByteArray(this, in, intSizedByteArray, arrayListByte);
 			} else if( current.equals(EntityMetadata.class)) {
 				fields[pos++] = Protocol.getEntityMetadata(this, in);
 			} else if( current.equals(IntSizedTripleByteArray.class)) {

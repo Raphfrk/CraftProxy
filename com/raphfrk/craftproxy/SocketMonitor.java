@@ -1,11 +1,13 @@
 package com.raphfrk.craftproxy;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 
 public class SocketMonitor {
 
 	IntSizedByteArray chunkCache = null;
+	ArrayList<Byte> arrayListByte = null;
 	
 	SynchronizedEntityMap synchronizedEntityMap;
 

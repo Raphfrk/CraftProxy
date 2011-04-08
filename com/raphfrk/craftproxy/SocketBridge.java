@@ -63,7 +63,7 @@ public class SocketBridge implements Runnable {
 
 			if( localRun && monitorExit ) {
 
-				currentPacket = new Packet(in, server, monitor.chunkCache);
+				currentPacket = new Packet(in, server, monitor.chunkCache, monitor.arrayListByte);
 				
 				monitorExit = monitor.process(currentPacket, out);
 				
