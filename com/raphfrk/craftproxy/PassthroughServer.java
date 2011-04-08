@@ -1,4 +1,5 @@
 package com.raphfrk.craftproxy;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
@@ -7,6 +8,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class PassthroughServer implements Runnable {
@@ -47,6 +49,8 @@ public class PassthroughServer implements Runnable {
 	}
 
 	ArrayList<PassthroughConnection> connections = new ArrayList<PassthroughConnection>();
+	
+	ConcurrentHashMap<String,Long> lastLogin = new ConcurrentHashMap<String,Long>();
 
 	public void run() {
 
@@ -107,10 +111,28 @@ public class PassthroughServer implements Runnable {
 				} catch (SocketException e) {
 					System.out.println( "Unable to set timeout");
 				}
-				PassthroughConnection passthrough = new PassthroughConnection( socket , defaultServer, defaultPortnum, password );
-				Thread t = new Thread( passthrough );
-				connections.add(passthrough);
-				t.start();
+				String address = socket.getInetAddress().getHostAddress().toString();
+				System.out.println("Connection from " + address);
+				long currentTime = System.currentTimeMillis();
+				Long lastConnect = lastLogin.get(address);
+				boolean floodProtection = lastConnect != null && lastConnect + 5000 > currentTime;
+				lastLogin.put(address, currentTime);
+				if(floodProtection) {
+					System.out.println("Disconnecting due to connect flood protection");
+					try {
+						DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+						Protocol.kick(outputStream, "Only one connection is allowed per IP every 5 seconds");
+						outputStream.flush();
+						socket.close();
+					} catch (IOException e) {
+						System.out.println("Exception when closing connection");
+					}
+				} else {
+					PassthroughConnection passthrough = new PassthroughConnection( socket , defaultServer, defaultPortnum, password );
+					Thread t = new Thread( passthrough );
+					connections.add(passthrough);
+					t.start();
+				}
 			}
 
 

@@ -370,6 +370,7 @@ public class PassthroughConnection implements Runnable {
 			try {
 				outputToServer.close();
 				inputFromServer.close();
+				socketToServer.close();
 			} catch (IOException e) {
 				System.out.println( "Unable to close link");
 			}
@@ -392,6 +393,7 @@ public class PassthroughConnection implements Runnable {
 
 					outputToClient.close();
 					inputFromClient.close();
+					socketToClient.close();
 				} catch (IOException e) {
 					System.out.println( "Unable to close link");
 				}
