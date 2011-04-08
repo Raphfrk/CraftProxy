@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import com.raphfrk.craftproxy.SocketMonitor.CommandElement;
+
 
 public class DownstreamMonitor extends SocketMonitor{
 
@@ -77,7 +79,11 @@ public class DownstreamMonitor extends SocketMonitor{
 				return false;
 			} else if( command.command.equals("INVALIDBREAK")) {
 				return false;
-			} /*else if( command.command.equals("MOVEMENT")) {
+			} else if( command.command.equals("BREAKME")) {
+				other.addCommand(new CommandElement( "INVALIDBREAK" , null ));
+				return false;
+			}
+			/*else if( command.command.equals("MOVEMENT")) {
 
 				Object[] posArray = (Object[])command.target;
 
@@ -182,7 +188,9 @@ public class DownstreamMonitor extends SocketMonitor{
 				//System.out.println("Move Packet: " + packet);
 				//System.out.println("Coords: " + ((Double)packet.fields[0])*32 + ", " + ((Double)packet.fields[3])*32 );
 
-				packet.writeBytes(out);
+				if(!packet.writeBytes(out)) {
+					return false;
+				}
 
 				while( !packetFIFO.isEmpty() ) {
 					Packet current = packetFIFO.removeFirst();
@@ -195,7 +203,9 @@ public class DownstreamMonitor extends SocketMonitor{
 				}
 				//System.out.println("Move Packet: " + packet);
 
-				packet.writeBytes( out );
+				if(!packet.writeBytes( out )) {
+					return false;
+				}
 
 				chunkCache = new IntSizedByteArray();
 				arrayListByte = new ArrayList<Byte>();
@@ -253,6 +263,7 @@ public class DownstreamMonitor extends SocketMonitor{
 
 				if( !unloadChunks(out) ) {
 					System.out.println( "Error unloading chunks");
+					return false;
 				}
 
 				return false;
@@ -302,7 +313,9 @@ public class DownstreamMonitor extends SocketMonitor{
 		//packet.printBytes();
 
 		//if(packet.packetId != 0x1E) {
-		packet.writeBytes(out);
+		if(!packet.writeBytes(out)) {
+			return false;
+		}
 		//}
 
 

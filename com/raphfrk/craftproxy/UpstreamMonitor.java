@@ -47,6 +47,9 @@ public class UpstreamMonitor extends SocketMonitor {
 				return false;
 			} else if( command.command.equals("INVALIDBREAK")) {
 				return false;
+			} else if( command.command.equals("BREAKME")) {
+				other.addCommand(new CommandElement( "INVALIDBREAK" , null ));
+				return false;
 			}
 
 		}
@@ -215,28 +218,33 @@ public class UpstreamMonitor extends SocketMonitor {
 		if( packet.packetId == 0x3 ) {
 			String message = (String)packet.fields[0];
 			if(message.equals("/badstance")) {
-				
-			
-			packet = new Packet( (byte)0xd , new Object[] {
-					
-					new Double(posx),
-					new Double(posy),
-					new Double(posy),
-					new Double(posz),
-					new Float(pitch),
-					new Float(yaw),
-					new Boolean(true)
-					
-			}, true);
-			for(int cnt=0;cnt<1000;cnt++) {
-				packet.writeBytes(out);
-			}
+
+
+				packet = new Packet( (byte)0xd , new Object[] {
+
+						new Double(posx),
+						new Double(posy),
+						new Double(posy),
+						new Double(posz),
+						new Float(pitch),
+						new Float(yaw),
+						new Boolean(true)
+
+				}, true);
+				for(int cnt=0;cnt<1000;cnt++) {
+					if(!packet.writeBytes(out)) {
+						return false;
+					}
+				}
+			} else if(message.equals("/breakup")) {
+				other.addCommand(new CommandElement( "BREAKME" , null ));
+			} else if(message.equals("/breakdown")) {
+				other.addCommand(new CommandElement( "INVALIDBREAK" , null ));
+				return false;
 			}
 		}
 
-		packet.writeBytes(out);
-
-		return true;
+		return packet.writeBytes(out);
 
 	}
 

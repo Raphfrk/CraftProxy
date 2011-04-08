@@ -322,6 +322,8 @@ public class PassthroughConnection implements Runnable {
 				downstreamMonitor.setOtherMonitor(upstreamMonitor);
 			}
 
+			boolean holdingSuccess = true;
+			
 			if( !playerRecord.forward && upstreamBridge != null ) {
 				holding = ((UpstreamMonitor)upstreamBridge.monitor).holding;
 				Packet holdingUpdate = new Packet( 
@@ -331,37 +333,34 @@ public class PassthroughConnection implements Runnable {
 				if(!Globals.isQuiet()) {
 					System.out.println( "Updating hold slot to " + holding);
 				}
-				holdingUpdate.writeBytes(outputToServer);
+				if(!holdingUpdate.writeBytes(outputToServer)) {
+					holdingSuccess = false;
+					System.out.println("Unable to send holding packet");
+				}
 			}
 
 			upstreamBridge = new SocketBridge( inputFromClient, outputToServer, upstreamMonitor, false );
+
 			downstreamBridge = new SocketBridge( inputFromServer, outputToClient, downstreamMonitor, true );
 
 			if( !playerRecord.forward ) {
 				((UpstreamMonitor)upstreamBridge.monitor).holding = holding;
 			}
 
-			Thread t1 = new Thread( upstreamBridge );
-			Thread t2 = new Thread( downstreamBridge );
-			t1.start();
-			t2.start();
+			if(holdingSuccess) {
 
-			synchronized(upstreamBridge.running) {
-				while( upstreamBridge.running.get() ) {
-					try {
-						upstreamBridge.running.wait();
-					} catch (InterruptedException e) {}
-				}
-			}
+				Thread t1 = new Thread( upstreamBridge );
+				Thread t2 = new Thread( downstreamBridge );
+				t1.start();
+				t2.start();
 
-			synchronized(downstreamBridge.running) {
-				while( downstreamBridge.running.get() ) {
-					try {
-						downstreamBridge.running.wait();
-					} catch (InterruptedException e) {}
+				try {
+					t1.join();
+					t2.join();
+				} catch (InterruptedException e) {
 				}
+
 			}
-			
 			initialConnection = false;
 
 			if(!Globals.isQuiet()) {
