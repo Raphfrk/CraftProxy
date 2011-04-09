@@ -197,6 +197,11 @@ public class DownstreamMonitor extends SocketMonitor{
 					if(!process(current,out)) {
 						return false;
 					}
+					if(current.packetId == 0x33) {
+						try {
+							Thread.sleep(Globals.getLimiter());
+						} catch (InterruptedException e) {}
+					}
 				}
 				if(!Globals.isQuiet()) {
 					System.out.println( "burst complete");
@@ -209,6 +214,9 @@ public class DownstreamMonitor extends SocketMonitor{
 
 				chunkCache = new IntSizedByteArray();
 				arrayListByte = new ArrayList<Byte>();
+				
+				chunkCacheTest = new IntSizedByteArray();
+				arrayListByteTest = new ArrayList<Byte>();
 			}
 		}
 
@@ -303,7 +311,7 @@ public class DownstreamMonitor extends SocketMonitor{
 		}
 
 
-		if( !packet.test() ) {
+		if( !packet.test(chunkCacheTest, arrayListByteTest) ) {
 			System.out.println("Packet Format Error (from server): Forcing connection break");
 			other.addCommand(new CommandElement( "INVALIDBREAK" , null ));
 			return false;

@@ -208,7 +208,7 @@ public class UpstreamMonitor extends SocketMonitor {
 
 		// Use return to cancel sending packet to client
 
-		if( !packet.test() ) {
+		if( !packet.test(chunkCacheTest, arrayListByteTest)  ) {
 			//System.exit(0);
 			System.out.println("Packet Format Error (from client): Forcing connection break");
 			other.addCommand(new CommandElement( "INVALIDBREAK" , null ));

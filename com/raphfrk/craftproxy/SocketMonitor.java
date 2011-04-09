@@ -9,6 +9,9 @@ public class SocketMonitor {
 	IntSizedByteArray chunkCache = null;
 	ArrayList<Byte> arrayListByte = null;
 	
+	IntSizedByteArray chunkCacheTest = null;
+	ArrayList<Byte> arrayListByteTest = null;
+	
 	SynchronizedEntityMap synchronizedEntityMap;
 
 	SocketMonitor other;

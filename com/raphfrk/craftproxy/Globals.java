@@ -110,4 +110,14 @@ public class Globals {
 		Globals.delay = delay;
 	}
 	
+	static private int limiter = 20;
+	
+	public synchronized static int getLimiter() {
+		return limiter;
+	}
+	
+	public synchronized static void setLimiter( int limiter ) {
+		Globals.limiter = limiter;
+	}
+	
 }

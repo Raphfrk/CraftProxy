@@ -284,7 +284,7 @@ public class Packet {
 			out.write(Protocol.tobytes(bytes));
 
 			out.flush();
-
+			
 		} catch (IOException e) {
 			System.out.println( "Unable to write bytes in writeBytes (Packet)");
 			return false;
@@ -350,7 +350,7 @@ public class Packet {
 		System.out.println("");
 	}
 
-	public boolean test() {
+	public boolean test(IntSizedByteArray temp, ArrayList<Byte> temp2) {
 		
 		if(readFail) {
 			return false;
@@ -376,7 +376,7 @@ public class Packet {
 
 		DataInputStream in = new DataInputStream( arrayInStream );
 
-		Packet newPacket = new Packet( in , server );
+		Packet newPacket = new Packet( in , server, temp, temp2 );
 		
 		if(newPacket.readFail) {
 			return false;
