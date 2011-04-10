@@ -68,6 +68,7 @@ public class SocketBridge implements Runnable {
 				monitorExit = monitor.process(currentPacket, out);
 				
 				if( currentPacket.timeout ) {
+					System.out.println("Duration: " + timeoutDuration);
 					if( (timeoutDuration++) > 20) {
 						if(!Globals.isQuiet()) {
 							System.out.println( "Connection timed out");

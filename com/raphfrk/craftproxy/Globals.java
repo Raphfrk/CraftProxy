@@ -120,4 +120,14 @@ public class Globals {
 		Globals.limiter = limiter;
 	}
 	
+	static private int fairness = 0;
+	
+	public synchronized static int getFairness() {
+		return fairness;
+	}
+	
+	public synchronized static void setFairness( int fairness ) {
+		Globals.fairness = fairness;
+	}
+	
 }

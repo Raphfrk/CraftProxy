@@ -237,7 +237,7 @@ public class Packet {
 	}
 
 	public boolean writeBytes(DataOutputStream out) {
-
+		
 		ArrayList<Byte> bytes = new ArrayList<Byte>();
 
 		try {

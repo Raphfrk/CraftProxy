@@ -53,6 +53,7 @@ public class Main {
 					else if( args[pos].equals("reconnectfile")){ ReconnectCache.init(args[pos+1]); pos++;}
 					else if( args[pos].equals("banned"))       { BanList.init(args[pos+1]); pos++;}
 					else if( args[pos].equals("limiter"))       { Globals.setLimiter(Integer.parseInt(args[pos+1])); pos++;}
+					else if( args[pos].equals("fairness"))      { Globals.setFairness(Integer.parseInt(args[pos+1])); pos++;}
 					else if( args[pos].equals("delay"))		   { Globals.setDelay(Integer.parseInt(args[pos+1])); pos++;}
 					else                                         password = new String(args[pos]); // game password - not used
 

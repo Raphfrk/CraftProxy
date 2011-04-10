@@ -37,10 +37,14 @@ public class DownstreamMonitor extends SocketMonitor{
 	boolean playerMoved = false;
 
 	boolean destroyed = false;
+	
+	long lastTime = -1;
 
 	@Override
 	public boolean process(Packet packet, DataOutputStream out) {
-
+		
+		checkFairness();
+		
 		if( packet.eof ) {
 			other.addCommand(new CommandElement( "EOFBREAK" , null ));
 			return false;
@@ -193,6 +197,7 @@ public class DownstreamMonitor extends SocketMonitor{
 				}
 
 				while( !packetFIFO.isEmpty() ) {
+					checkFairness();
 					Packet current = packetFIFO.removeFirst();
 					if(!process(current,out)) {
 						return false;
@@ -330,6 +335,23 @@ public class DownstreamMonitor extends SocketMonitor{
 		return true;
 
 
+	}
+	
+	void checkFairness() {
+		long delay = Globals.getFairness();
+		if(delay > 0) {
+			long currentTime = System.currentTimeMillis();
+
+			if(currentTime > lastTime + delay) {
+				try {
+					//System.out.println("Sleeping for: " + delay + " current - last = " + (currentTime - lastTime));
+					Thread.sleep(delay);
+				} catch (InterruptedException e) {
+				}
+				lastTime = currentTime + delay;
+
+			}
+		}
 	}
 
 	String redirectDetected(Packet packet) {
