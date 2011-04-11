@@ -143,7 +143,7 @@ public class PassthroughConnection implements Runnable {
 				boolean localAddress = false;
 				InetAddress addr;
 
-				if(hostname.contains("localhost")) {
+				if(hostname.contains("localhost") || hostname.equals(Globals.getLocalAlias())) {
 					localAddress = true;
 				} else {
 					try {
