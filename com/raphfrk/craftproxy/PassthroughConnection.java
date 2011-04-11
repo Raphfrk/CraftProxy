@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 
@@ -15,6 +18,7 @@ public class PassthroughConnection implements Runnable {
 	int port = -1;
 	String password = null;
 	short holding;
+	int listenPort;
 
 	Socket socketToClient = null;
 	Socket socketToServer = null;
@@ -46,11 +50,12 @@ public class PassthroughConnection implements Runnable {
 	}
 
 
-	PassthroughConnection( Socket socket, String hostname, int port, String password ) {
+	PassthroughConnection( Socket socket, String hostname, int port, String password, int listenPort ) {
 		this.socketToClient = socket;
 		this.hostname = hostname;
 		this.port = port;
 		this.password = password;
+		this.listenPort = listenPort;
 	}
 
 	public void run() {
@@ -134,8 +139,27 @@ public class PassthroughConnection implements Runnable {
 			DataOutputStream outputToServer = null;
 
 			while( !success ) {
+				
+				boolean localAddress = false;
+				InetAddress addr;
 
-				if( initialConnection ) {
+				if(hostname.contains("localhost")) {
+					localAddress = true;
+				} else {
+					try {
+						addr = InetAddress.getByName(hostname);
+						localAddress = isThisMyIpAddress(addr);
+					} catch (UnknownHostException e) {
+					}
+				}
+
+				boolean selfConnect = (localAddress && port == listenPort );
+				
+				if(selfConnect) {
+					System.out.println("Self connect attempted, replacing target and hostname with defaults");
+				}
+				
+				if( initialConnection || selfConnect ) {
 					String fullAddress = ReconnectCache.get(playerRecord.username);
 
 					hostname = ReconnectCache.getHost(fullAddress, defaultHostname);
@@ -420,5 +444,19 @@ public class PassthroughConnection implements Runnable {
 			threadsStarted.notify();
 		}
 	}
+	
+	public static boolean isThisMyIpAddress(InetAddress addr) {
+	    // Check if the address is a valid special local or loop back
+	    if (addr.isAnyLocalAddress() || addr.isLoopbackAddress())
+	        return true;
+
+	    // Check if the address is defined on any interface
+	    try {
+	        return NetworkInterface.getByInetAddress(addr) != null;
+	    } catch (SocketException e) {
+	        return false;
+	    }
+	}
+
 
 }

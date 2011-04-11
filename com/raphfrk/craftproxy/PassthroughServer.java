@@ -128,7 +128,7 @@ public class PassthroughServer implements Runnable {
 						System.out.println("Exception when closing connection");
 					}
 				} else {
-					PassthroughConnection passthrough = new PassthroughConnection( socket , defaultServer, defaultPortnum, password );
+					PassthroughConnection passthrough = new PassthroughConnection( socket , defaultServer, defaultPortnum, password , listenPort );
 					Thread t = new Thread( passthrough );
 					connections.add(passthrough);
 					t.start();
