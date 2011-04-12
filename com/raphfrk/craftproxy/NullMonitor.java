@@ -1,6 +1,7 @@
 package com.raphfrk.craftproxy;
 
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 
 import com.raphfrk.craftproxy.SocketMonitor.CommandElement;
 
@@ -20,6 +21,14 @@ public class NullMonitor extends SocketMonitor {
 
 	@Override
 	public boolean process(Packet packet, DataOutputStream out) {
+		
+		if(chunkCache==null) {
+			chunkCache = new IntSizedByteArray();
+			arrayListByte = new ArrayList<Byte>();
+
+			chunkCacheTest = new IntSizedByteArray();
+			arrayListByteTest = new ArrayList<Byte>();
+		}
 		
 		CommandElement command;
 		
