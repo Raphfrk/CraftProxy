@@ -48,7 +48,7 @@ public class NullMonitor extends SocketMonitor {
 			return false;
 		}
 		
-		if( packet.packetId == 0xFF ) {
+		if( packet.packetId == (byte)0xFF ) {
 			other.addCommand(new CommandElement( "BREAK" , null ));
 		}
 		

@@ -287,6 +287,7 @@ public class Packet {
 			
 		} catch (IOException e) {
 			System.out.println( "Unable to write bytes in writeBytes (Packet)");
+			e.printStackTrace();
 			return false;
 		}
 

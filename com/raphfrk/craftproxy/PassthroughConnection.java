@@ -140,6 +140,20 @@ public class PassthroughConnection implements Runnable {
 
 			while( !success ) {
 				
+				if( initialConnection ) {
+					String fullAddress = ReconnectCache.get(playerRecord.username);
+
+					hostname = ReconnectCache.getHost(fullAddress, defaultHostname);
+					port = ReconnectCache.getPort(fullAddress, defaultPort);
+				} 
+
+				if(hostname.equals(Globals.getLocalAlias())) {
+					if(!Globals.isQuiet()) {
+						System.out.println("replacing " + hostname + " with localhost" );
+					}
+					hostname = "localhost";
+				}
+
 				boolean localAddress = false;
 				InetAddress addr;
 
@@ -159,20 +173,11 @@ public class PassthroughConnection implements Runnable {
 					System.out.println("Self connect attempted, replacing target and hostname with defaults");
 				}
 				
-				if( initialConnection || selfConnect ) {
-					String fullAddress = ReconnectCache.get(playerRecord.username);
-
-					hostname = ReconnectCache.getHost(fullAddress, defaultHostname);
-					port = ReconnectCache.getPort(fullAddress, defaultPort);
+				if ( selfConnect ) {
+					hostname = defaultHostname;
+					port = defaultPort;
 				}
 				
-				if(hostname.equals(Globals.getLocalAlias())) {
-					if(!Globals.isQuiet()) {
-						System.out.println("replacing " + hostname + " with localhost" );
-					}
-					hostname = "localhost";
-				}
-
 				try {
 
 					if( hostname.trim().startsWith("localhost")) {
@@ -412,7 +417,9 @@ public class PassthroughConnection implements Runnable {
 				}
 
 				try {
-					Protocol.kick(outputToClient, "Proxy lost connection to server");
+					if(!playerRecord.forward) {
+						Protocol.kick(outputToClient, "Proxy lost connection to server");
+					}
 					outputToClient.flush();
 
 					outputToClient.close();
