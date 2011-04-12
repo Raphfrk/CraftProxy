@@ -52,14 +52,14 @@ public class SocketBridge implements Runnable {
 		Packet currentPacket = new Packet(in, server);
 		
 		monitorExit = monitor.process(currentPacket, out);
+		
+		int timeoutDuration = 0;
 
 		while( localRun && !currentPacket.eof && monitorExit) {
 
 			synchronized( run ) {
 				localRun = run.get();
 			}
-			
-			int timeoutDuration = 0;
 
 			if( localRun && monitorExit ) {
 
