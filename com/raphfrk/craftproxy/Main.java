@@ -55,6 +55,8 @@ public class Main {
 					else if( args[pos].equals("limiter"))       { Globals.setLimiter(Integer.parseInt(args[pos+1])); pos++;}
 					else if( args[pos].equals("fairness"))      { Globals.setFairness(Integer.parseInt(args[pos+1])); pos++;}
 					else if( args[pos].equals("delay"))		   { Globals.setDelay(Integer.parseInt(args[pos+1])); pos++;}
+					else if( args[pos].equals("window"))		   { Globals.setWindow(Long.parseLong(args[pos+1])); pos++;}
+					else if( args[pos].equals("threshold"))		   { Globals.setThreshold(Long.parseLong(args[pos+1])); pos++;}
 					else                                         password = new String(args[pos]); // game password - not used
 
 				}

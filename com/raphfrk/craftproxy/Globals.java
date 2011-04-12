@@ -130,4 +130,23 @@ public class Globals {
 		Globals.fairness = fairness;
 	}
 	
+	static private long window = 0;
+	
+	public synchronized static long getWindow() {
+		return window;
+	}
+	
+	public synchronized static void setWindow( long window ) {
+		Globals.window = window;
+	}
+	
+	static private long threshold = 0;
+	
+	public synchronized static long getThreshold() {
+		return threshold;
+	}
+	
+	public synchronized static void setThreshold( long threshold ) {
+		Globals.threshold = threshold;
+	}
 }

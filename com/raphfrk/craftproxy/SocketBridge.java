@@ -3,6 +3,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import com.raphfrk.craftproxy.SocketMonitor.CommandElement;
+
 
 public class SocketBridge implements Runnable {
 
@@ -46,6 +48,8 @@ public class SocketBridge implements Runnable {
 	boolean monitorExit = true;
 
 	public void run() {
+		
+		CPUUsage cpuUsage = new CPUUsage();
 
 		boolean localRun = true;
 
@@ -54,6 +58,9 @@ public class SocketBridge implements Runnable {
 		monitorExit = monitor.process(currentPacket, out);
 		
 		int timeoutDuration = 0;
+		
+		long window = Globals.getWindow();
+		long threshold = Globals.getThreshold();
 
 		while( localRun && !currentPacket.eof && monitorExit) {
 
@@ -84,6 +91,14 @@ public class SocketBridge implements Runnable {
 				if( !currentPacket.valid && !currentPacket.eof && !currentPacket.timeout ) {
 					currentPacket.eof = true;
 					System.out.println( "Most recent packets: " + packetIdStore );
+
+				}
+				
+				if(window > 0 && cpuUsage.CPUUsage(window)*100 > threshold) {
+					System.out.println("Breaking connection due to CPU overload");
+					monitorExit = false;
+					monitor.other.addCommand(monitor.new CommandElement( "BREAK" , null ));
+					monitor.other.addCommand(monitor.new CommandElement( "INVALIDBREAK" , null ));
 
 				}
 
