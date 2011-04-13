@@ -128,8 +128,7 @@ public class PassthroughConnection implements Runnable {
 
 		while( port != -1 ) {
 
-			int repeatAttempts = 5;
-			int repeatDelay = 5500;
+			int repeatAttempts = Globals.getRepeats();
 
 			int cnt=0;
 
@@ -217,8 +216,14 @@ public class PassthroughConnection implements Runnable {
 						}
 						DataOutputStream outData = new DataOutputStream( socketToClient.getOutputStream() );
 
-						ArrayList<Byte> kick = Protocol.genKickPacket(
-						"Unable to open connection to target server");
+						ArrayList<Byte> kick;
+						String reconnectServer = ReconnectCache.get(playerRecord.username);
+						System.out.println("Player location: " + reconnectServer);
+						if(!reconnectServer.equals("") ) {
+							kick = Protocol.genKickPacket("Server for player location not responding");
+						} else {
+							kick = Protocol.genKickPacket("Default world server not responding");
+						}
 
 						outData.write(Protocol.tobytes(kick));
 						outData.flush();
@@ -435,6 +440,7 @@ public class PassthroughConnection implements Runnable {
 			} else {
 				hostname = ((DownstreamMonitor)downstreamBridge.monitor).hostName;
 				System.out.println( "Redirect to " + hostname + ":" + port );
+				ReconnectCache.store(playerRecord.username, hostname, port);
 				if( synchronizedEntityMap != null ) {
 					synchronizedEntityMap.destroy(outputToClient);
 				}

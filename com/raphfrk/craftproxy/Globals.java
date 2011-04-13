@@ -149,4 +149,15 @@ public class Globals {
 	public synchronized static void setThreshold( long threshold ) {
 		Globals.threshold = threshold;
 	}
+	
+	static private int repeats = -1;
+	
+	public synchronized static int getRepeats() {
+		return repeats;
+	}
+	
+	public synchronized static void setRepeats( int repeats ) {
+		Globals.repeats = repeats;
+	}
+	
 }
